@@ -124,16 +124,7 @@ fsysinit(void)
 	fmtinstall('F', fcallfmt);
 	if((u = getuser()) != nil)
 		user = estrdup(u);
-	if(pipe(p) < 0)
-		error("can't create pipe");
-	if(post9pservice(p[0], "acme", mtpt) < 0){
-		close(p[0]);
-		close(p[1]);
-		fprint(2, "acme: can't post 9P service; continuing without it\n");
-		return;
-	}
-	sfd = p[1];
-	proccreate(fsysproc, nil, STACK);
+	USED(p);
 }
 
 void
