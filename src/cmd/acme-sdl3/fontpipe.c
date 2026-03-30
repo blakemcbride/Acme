@@ -274,6 +274,10 @@ _fontpipe(char *name)
 	int p[2];
 	Fontarg *a;
 
+	/* strip /mnt/font/ prefix if present (backward compat) */
+	if(strncmp(name, "/mnt/font/", 10) == 0)
+		name += 10;
+
 	if(!fontsrv_ready)
 		fontsrv_init();
 

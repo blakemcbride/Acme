@@ -55,15 +55,11 @@ subfontname(char *cfname, char *fname, int maxdepth)
 		free(tmp2);
 	}
 
-	/* try default */
-	if(strncmp(t, "/mnt/font/", 10) == 0 || access(t, AREAD) == 0) {
-		if(scale > 1) {
-			tmp2 = smprint("%d*%s", scale, t);
-			free(t);
-			t = tmp2;
-		}
-		return t;
+	/* try default: return name even if not on disk (fontpipe may handle it) */
+	if(scale > 1) {
+		tmp2 = smprint("%d*%s", scale, t);
+		free(t);
+		t = tmp2;
 	}
-
-	return nil;
+	return t;
 }

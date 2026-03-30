@@ -30,8 +30,8 @@ _getsubfont(Display *d, char *name)
 		fd = defaultpipe();
 	else
 		fd = open(fname, OREAD);
-	if(fd < 0 && strncmp(fname, "/mnt/font/", 10) == 0)
-		fd = _fontpipe(fname+10);
+	if(fd < 0)
+		fd = _fontpipe(fname);
 	if(fd < 0){
 		fprint(2, "getsubfont: can't open %s: %r\n", fname);
 		return 0;

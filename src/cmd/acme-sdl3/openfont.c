@@ -41,9 +41,8 @@ openfont1(Display *d, char *name)
 {
 	Font *fnt;
 	int fd, i, n, scale;
-	char *buf, *nambuf, *nambuf0, *fname, *freename;
+	char *buf, *fname, *freename;
 
-	nambuf = 0;
 	freename = nil;
 	scale = parsefontscale(name, &fname);
 
@@ -52,35 +51,13 @@ openfont1(Display *d, char *name)
 		goto build;
 	}
 	fd = open(fname, OREAD);
-	if(fd < 0 && strncmp(fname, "/lib/font/bit/", 14) == 0){
-		nambuf = smprint("#9/font/%s", fname+14);
-		if(nambuf == nil)
-			return 0;
-		nambuf0 = unsharp(nambuf);
-		if(nambuf0 != nambuf)
-			free(nambuf);
-		nambuf = nambuf0;
-		if(nambuf == nil)
-			return 0;
-		if((fd = open(nambuf, OREAD)) < 0){
-			free(nambuf);
-			return 0;
-		}
-		if(scale > 1) {
-			name = smprint("%d*%s", scale, nambuf);
-			freename = name;
-		} else {
-			name = nambuf;
-		}
-	}
 	if(fd >= 0)
 		n = _drawflength(fd);
-	if(fd < 0 && strncmp(fname, "/mnt/font/", 10) == 0) {
-		fd = _fontpipe(fname+10);
+	if(fd < 0) {
+		fd = _fontpipe(fname);
 		n = 1024*1024;
 	}
 	if(fd < 0){
-		free(nambuf);
 		free(freename);
 		return 0;
 	}
@@ -88,7 +65,6 @@ openfont1(Display *d, char *name)
 	buf = malloc(n+1);
 	if(buf == 0){
 		close(fd);
-		free(nambuf);
 		free(freename);
 		return 0;
 	}
@@ -96,7 +72,6 @@ openfont1(Display *d, char *name)
 	close(fd);
 	if(i <= 0){
 		free(buf);
-		free(nambuf);
 		free(freename);
 		return 0;
 	}
@@ -104,7 +79,6 @@ openfont1(Display *d, char *name)
 build:
 	fnt = buildfont(d, buf, name);
 	free(buf);
-	free(nambuf);
 	free(freename);
 	if(scale != 1) {
 		fnt->scale = scale;
@@ -189,11 +163,15 @@ hidpiname(Font *f)
 	if(p != nil)
 		return strdup(p+1);
 
-	// If font name is /mnt/font/Name/Size/font, scale Size.
-	if(strncmp(f->name, "/mnt/font/", 10) == 0) {
-		p = strchr(f->name+10, '/');
-		if(p == nil || *++p < '0' || *p > '9')
-			goto scale;
+	// If font name is [/mnt/font/]Name/Size/font, scale Size.
+	{
+		char *base;
+		base = f->name;
+		if(strncmp(base, "/mnt/font/", 10) == 0)
+			base += 10;
+		p = strchr(base, '/');
+	}
+	if(p != nil && *++p >= '0' && *p <= '9') {
 		q = p;
 		size = 0;
 		while('0' <= *q && *q <= '9')
@@ -202,7 +180,6 @@ hidpiname(Font *f)
 	}
 
 	// Otherwise use pixel doubling.
-scale:
 	return smprint("%d*%s", f->scale*2, f->name);
 }
 
