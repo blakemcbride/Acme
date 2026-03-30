@@ -1,0 +1,5 @@
+LIBNAME = libauthsrv.a
+SRCS = _asgetticket.c _asrdresp.c authdial.c convA2M.c convM2A.c \
+	convM2PR.c convM2T.c convM2TR.c convPR2M.c convT2M.c convTR2M.c \
+	nvcsum.c opasstokey.c passtokey.c readnvram.c
+include ../mklib.mk
