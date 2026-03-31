@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+    <title>Mouse Shortcuts in Acme</title>
+
+    <link rel="stylesheet" href="./Mouse Shortcuts in Acme_files/style.css" type="text/css" media="screen" title="default">
+
+</head>
+<body>
+
+<div id="main-copy">
+
+
+<h1>Mouse Shortcuts in Acme</h1>
+
+<p>“<em>Acme has a very simple mouse interface, the first button selects text, the second button selects text, and the third button also selects text.</em>” – Charles Forsyth (paraphrased)</p>
+
+<p>Acme uses a very special, and I might add, cool, ‘mouse chording’ system that
+makes many complex text editing operations very simple and fast.</p>
+
+<h2>Basic mouse operations</h2>
+
+<ul>
+<li><em>Button One</em> - Select text.</li>
+<li><em>Button One double click</em> - Select word under cursor, or at the end/start of a line, select the whole line.</li>
+<li><em>Button Two</em> - Execute text*.</li>
+<li><em>Button Three</em> - Plumb, if plumb fails, search for next occurrence of text*.</li>
+</ul>
+
+
+<p>* This applies either to text ‘sweep’ by the mouse while holding down this
+button, or to the word/command under the cursor if it is clicked once.</p>
+
+<h2>Mouse chords</h2>
+
+<ul>
+<li>After selecting with <strong>Button One</strong> and while <em>still</em> holding <strong>Button One</strong> down (These chords also work with text selected by double-clicking, the double-click expansion happens when the second click starts, not when it ends):
+
+<ul>
+<li>Clicking <strong>Button Two</strong> cuts.</li>
+<li>clicking <strong>Button Three</strong> pastes (Can be reverted by clicking <strong>Button Two</strong> immediately afterwards).</li>
+<li>To <em>snarf</em> (ie., copy) click <em>Button Two** immediately followed by </em>Button Three*.</li>
+</ul>
+</li>
+<li>While holding down button 2 on text to be executed as a command, clicking button 1 appends the text last pointed to by button 1 as a distinct final argument. (For example, to search for literal text one may execute Look text with button 2 or instead point at text with button 1 in any window, release button 1, then execute Look, clicking button 1 while 2 is held down.)</li>
+</ul>
+
+
+<p>Thanks to Tom Lieber for creating this graphical representation of the various mouse chords:</p>
+
+<p><img src="./Mouse Shortcuts in Acme_files/acme-mouse-chords.png" alt="Acme Mouse Chords Cheat Sheet"></p>
+
+<p><em>Todo: Illustrate the chord using button 2 followed by button 1 to pass selected text as argument to the command executed.</em></p>
+
+<p>(Note: This list of chords is incomplete, for now see the acme(1) manual page for an explanation of mouse chording.)</p>
+
+<h2>Simulating 3 Buttons</h2>
+
+<p>Some mice (specially on laptops) lack 3 buttons, but usually there is a way to ‘emulate’ the missing buttons, but this is specific to the version of acme you are using, consult the p9p or acme-sac documentation for details.</p>
+
+<p>Still, it is recommended you just get a real mouse or a real (Thinkpad) laptop ;)</p>
+
+<h2>See Also</h2>
+
+<ul>
+<li>The Acme Readme - It includes a discussion of the Acme user interface in general with many examples.</li>
+</ul>
+
+
+
+</div>
+
+</body></html>

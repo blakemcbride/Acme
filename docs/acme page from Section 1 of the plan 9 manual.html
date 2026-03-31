@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+    <title>acme page from Section 1 of the plan 9 manual</title>
+
+    <link rel="stylesheet" href="./acme page from Section 1 of the plan 9 manual_files/style.css" type="text/css" media="screen, handheld" title="default">
+    <link rel="stylesheet" href="./acme page from Section 1 of the plan 9 manual_files/style(1).css" type="text/css" media="screen" title="default">
+
+</head>
+<body>
+
+<article>
+
+<pre>
+     ACME(1)                                                   ACME(1)
+
+     NAME
+          acme, win, awd - interactive text windows
+
+     SYNOPSIS
+          acme [ -ab ] [ -c ncol ] [ -f varfont ] [ -F fixfont ] [ -l
+          loadfile | file ... ]
+
+          win [ command ]
+
+          awd [ label ]
+
+     DESCRIPTION
+          Acme manages windows of text that may be edited interac-
+          tively or by external programs.  The interactive interface
+          uses the keyboard and mouse; external programs use a set of
+          files served by acme; these are discussed in acme(4).
+
+          Any named files are read into acme windows before acme
+          accepts input.  With the -l option, the state of the entire
+          system is loaded from loadfile, which should have been
+          created by a Dump command (q.v.), and subsequent file names
+          are ignored.  Plain files display as text; directories
+          display as columnated lists of the names of their com-
+          ponents, as in ls -p directory|mc except that the names of
+          subdirectories have a slash appended.
+
+          The -f (-F) option sets the main font, usually variable-
+          pitch (alternate, usually fixed-pitch); the default is
+          /lib/font/bit/lucidasans/euro.8.font
+          (.../lucm/unicode.9.font).  Tab intervals are set to the
+          width of 4 (or the value of $tabstop) numeral zeros in the
+          appropriate font.
+
+        Windows
+          Acme windows are in two parts: a one-line tag above a
+          multi-line body. The body typically contains an image of a
+          file, as in sam(1), or the output of a program, as in an
+          rio(1) window.  The tag contains a number of blank-separated
+          words, followed by a vertical bar character, followed by
+          anything.  The first word is the name of the window, typi-
+          cally the name of the associated file or directory, and the
+          other words are commands available in that window.  Any text
+          may be added after the bar; examples are strings to search
+          for or commands to execute in that window.  Changes to the
+          text left of the bar will be ignored, unless the result is
+          to change the name of the window.
+
+          If a window holds a directory, the name (first word of the
+          tag) will end with a slash.
+
+     ACME(1)                                                   ACME(1)
+
+        Scrolling
+          Each window has a scroll bar to the left of the body.  The
+          scroll bar behaves much as in sam(1) or rio(1) except that
+          scrolling occurs when the button is pressed, rather than
+          released, and continues as long as the mouse button is held
+          down in the scroll bar.  For example, to scroll slowly
+          through a file, hold button 3 down near the top of the
+          scroll bar.  Moving the mouse down the scroll bar speeds up
+          the rate of scrolling.
+
+        Layout
+          Acme windows are arranged in columns.  By default, it
+          creates two columns when starting; this can be overridden
+          with the -c option.  Placement is automatic but may be
+          adjusted using the layout box in the upper left corner of
+          each window and column.  Pressing and holding any mouse but-
+          ton in the box drags the associated window or column.  For
+          windows, just clicking in the layout box grows the window in
+          place: button 1 grows it a little, button 2 grows it as much
+          as it can, still leaving all other tags in that column visi-
+          ble, and button 3 takes over the column completely, tem-
+          porarily hiding other windows in the column.  (They will
+          return en masse if any of them needs attention.)  The layout
+          box in a window is normally white; when it is black in the
+          center, it records that the file is `dirty': acme believes
+          it is modified from its original contents.
+
+          Tags exist at the top of each column and across the whole
+          display.  Acme pre-loads them with useful commands.  Also,
+          the tag across the top maintains a list of executing long-
+          running commands.
+
+        Typing
+          The behavior of typed text is similar to that in rio(1)
+          except that the characters are delivered to the tag or body
+          under the mouse; there is no `click to type'.  (The experi-
+          mental option -b causes typing to go to the most recently
+          clicked-at or made window.)  The usual backspacing conven-
+          tions apply.  As in sam(1) but not rio, the ESC key selects
+          the text typed since the last mouse action, a feature par-
+          ticularly useful when executing commands.  A side effect is
+          that typing ESC with text already selected is identical to a
+          Cut command (q.v.).
+
+          Most text, including the names of windows, may be edited
+          uniformly.  The only exception is that the command names to
+          the left of the bar in a tag are maintained automatically;
+          changes to them are repaired by acme.
+
+          When a window is in autoindent mode (see the Indent command
+          below) and a newline character is typed, acme copies leading
+          white space on the current line to the new line.  The option
+
+     ACME(1)                                                   ACME(1)
+
+          -a causes each window to start in autoindent mode.
+
+        Directory context
+          Each window's tag names a directory: explicitly if the win-
+          dow holds a directory; implicitly if it holds a regular file
+          (e.g. the directory /adm if the window holds /adm/users).
+          This directory provides a context for interpreting file
+          names in that window.  For example, the string users in a
+          window labeled /adm/ or /adm/keys will be interpreted as the
+          file name /adm/users.  The directory is defined purely tex-
+          tually, so it can be a non-existent directory or a real
+          directory associated with a non-existent file (e.g.
+          /adm/not-a-file).  File names beginning with a slash are
+          assumed to be absolute file names.
+
+        Errors
+          Windows whose names begin with - or + conventionally hold
+          diagnostics and other data not directly associated with
+          files.  A window labeled +Errors receives all diagnostics
+          produced by acme itself.  Diagnostics from commands run by
+          acme appear in a window named directory/+Errors where
+          directory is identified by the context of the command.
+          These error windows are created when needed.
+
+        Mouse button 1
+          Mouse button 1 selects text just as in sam(1) or rio(1),
+          including the usual double-clicking conventions.
+
+        Mouse button 2
+          By an action similar to selecting text with button 1, button
+          2 indicates text to execute as a command.  If the indicated
+          text has multiple white-space-separated words, the first is
+          the command name and the second and subsequent are its argu-
+          ments.  If button 2 is `clicked'-indicates a null string-
+          acme expands the indicated text to find a command to run: if
+          the click is within button-1-selected text, acme takes that
+          selection as the command; otherwise it takes the largest
+          string of valid file name characters containing the click.
+          Valid file name characters are alphanumerics and _ . - + /.
+          This behavior is similar to double-clicking with button 1
+          but, because a null command is meaningless, only a single
+          click is required.
+
+          Some commands, all by convention starting with a capital
+          letter, are built-ins that are executed directly by acme:
+
+          Cut  Delete most recently selected text and place in snarf
+               buffer.
+
+          Del  Delete window.  If window is dirty, instead print a
+               warning; a second Del will succeed.
+
+     ACME(1)                                                   ACME(1)
+
+          Delcol
+               Delete column and all its windows, after checking that
+               windows are not dirty.
+
+          Delete
+               Delete window without checking for dirtiness.
+
+          Dump Write the state of acme to the file name, if specified,
+               or $home/acme.dump by default.
+
+          Edit Treat the argument as a text editing command in the
+               style of sam(1). The full Sam language is implemented
+               except for the commands k, n, q, and !.  The = command
+               is slightly different: it includes the file name and
+               gives only the line address unless the command is
+               explicitly =#.  The `current window' for the command is
+               the body of the window in which the Edit command is
+               executed.  Usually the Edit command would be typed in a
+               tag; longer commands may be prepared in a scratch win-
+               dow and executed, with Edit itself in the current win-
+               dow, using the 2-1 chord described below.
+
+          Exit Exit acme after checking that windows are not dirty.
+
+          Font With no arguments, change the font of the associated
+               window from fixed-spaced to proportional-spaced or vice
+               versa. Given a file name argument, change the font of
+               the window to that stored in the named file.  If the
+               file name argument is prefixed by var (fix), also set
+               the default proportional-spaced (fixed-spaced) font for
+               future use to that font.  Other existing windows are
+               unaffected.
+
+          Get  Load file into window, replacing previous contents
+               (after checking for dirtiness as in Del).  With no
+               argument, use the existing file name of the window.
+               Given an argument, use that file but do not change the
+               window's file name.
+
+          ID   Print window ID number (q.v.).
+
+          Incl When opening `include' files (those enclosed in &lt;&gt;)
+               with button 3, acme searches in directories
+               /$objtype/include and /sys/include.  Incl adds its
+               arguments to a supplementary list of include direc-
+               tories, analogous to the -I option to the compilers.
+               This list is per-window and is inherited when windows
+               are created by actions in that window, so Incl is most
+               usefully applied to a directory containing relevant
+               source.  With no arguments, Incl prints the supplemen-
+               tary list.  This command is largely superseded by
+               plumbing (see plumb(6)).
+
+     ACME(1)                                                   ACME(1)
+
+          Indent
+               Set the autoindent mode according to the argument: on
+               and off set the mode for the current window; ON and OFF
+               set the mode for all existing and future windows.
+
+          Kill Send a kill note to acme-initiated commands named as
+               arguments.
+
+          Load Restore the state of acme from a file (default
+               $home/acme.dump) created by the Dump command.
+
+          Local
+               When prefixed to a command run the command in the same
+               file name space and environment variable group as acme.
+               The environment of the command is restricted but is
+               sufficient to run bind(1), 9fs (see srv(4)), import(4),
+               etc., and to set environment variables such as
+               $objtype.
+
+          Look Search in body for occurrence of literal text indicated
+               by the argument or, if none is given, by the selected
+               text in the body.
+
+          New  Make new window.  With arguments, load the named files
+               into windows.
+
+          Newcol
+               Make new column.
+
+          Paste
+               Replace most recently selected text with contents of
+               snarf buffer.
+
+          Put  Write window to the named file.  With no argument,
+               write to the file named in the tag of the window.
+
+          Putall
+               Write all dirty windows whose names indicate existing
+               regular files.
+
+          Redo Complement of Undo.
+
+          Send Append selected text or snarf buffer to end of body;
+               used mainly with win.
+
+          Snarf
+               Place selected text in snarf buffer.
+
+          Sort Arrange the windows in the column from top to bottom in
+               lexicographical order based on their names.
+
+          Tab  Set the width of tab stops for this window to the value
+
+     ACME(1)                                                   ACME(1)
+
+               of the argument, in units of widths of the zero charac-
+               ter.  With no arguments, it prints the current value.
+
+          Undo Undo last textual change or set of changes.
+
+          Zerox
+               Create a copy of the window containing most recently
+               selected text.
+
+          &lt;|&gt;  If a regular shell command is preceded by a &lt;, |, or &gt;
+               character, the selected text in the body of the window
+               is affected by the I/O from the command.  The &lt; charac-
+               ter causes the selection to be replaced by the standard
+               output of the command; &gt; causes the selection to be
+               sent as standard input to the command; and | does both
+               at once, `piping' the selection through the command and
+               replacing it with the output.
+
+          A common place to store text for commands is in the tag; in
+          fact acme maintains a set of commands appropriate to the
+          state of the window to the left of the bar in the tag.
+
+          If the text indicated with button 2 is not a recognized
+          built-in, it is executed as a shell command.  For example,
+          indicating date with button 2 runs date(1). The standard and
+          error outputs of commands are sent to the error window asso-
+          ciated with the directory from which the command was run,
+          which will be created if necessary.  For example, in a win-
+          dow /adm/users executing pwd will produce the output /adm in
+          a (possibly newly-created) window labeled /adm/+Errors; in a
+          window containing /sys/src/cmd/sam/sam.c executing mk will
+          run mk(1) in /sys/src/cmd/sam, producing output in a window
+          labeled /sys/src/cmd/sam/+Errors.  The environment of such
+          commands contains the variable $% with value set to the
+          filename of the window in which the command is run, and
+          $winid set to the window's id number (see acme(4)).
+
+        Mouse button 3
+          Pointing at text with button 3 instructs acme to locate or
+          acquire the file, string, etc. described by the indicated
+          text and its context.  This description follows the actions
+          taken when button 3 is released after sweeping out some
+          text.  In the description, text refers to the text of the
+          original sweep or, if it was null, the result of applying
+          the same expansion rules that apply to button 2 actions.
+
+          If the text names an existing window, acme moves the mouse
+          cursor to the selected text in the body of that window.  If
+          the text names an existing file with no associated window,
+          acme loads the file into a new window and moves the mouse
+          there.  If the text is a file name contained in angle brack-
+          ets, acme loads the indicated include file from the
+
+     ACME(1)                                                   ACME(1)
+
+          directory appropriate to the suffix of the file name of the
+          window holding the text.  (The Incl command adds directories
+          to the standard list.)
+
+          If the text begins with a colon, it is taken to be an
+          address, in the style of sam(1), within the body of the win-
+          dow containing the text.  The address is evaluated, the
+          resulting text highlighted, and the mouse moved to it.
+          Thus, in acme, one must type :/regexp or :127 not just
+          /regexp or 127.  (There is an easier way to locate literal
+          text; see below.)
+
+          If the text is a file name followed by a colon and an
+          address, acme loads the file and evaluates the address.  For
+          example, clicking button 3 anywhere in the text file.c:27
+          will open file.c, select line 27, and put the mouse at the
+          beginning of the line.  The rules about Error files, direc-
+          tories, and so on all combine to make this an efficient way
+          to investigate errors from compilers, etc.
+
+          If the text is not an address or file, it is taken to be
+          literal text, which is then searched for in the body of the
+          window in which button 3 was clicked.  If a match is found,
+          it is selected and the mouse is moved there.  Thus, to
+          search for occurrences of a word in a file, just click but-
+          ton 3 on the word.  Because of the rule of using the selec-
+          tion as the button 3 action, subsequent clicks will find
+          subsequent occurrences without moving the mouse.
+
+          In all these actions, the mouse motion is not done if the
+          text is a null string within a non-null selected string in
+          the tag, so that (for example) complex regular expressions
+          may be selected and applied repeatedly to the body by just
+          clicking button 3 over them.
+
+        Chords of mouse buttons
+          Several operations are bound to multiple-button actions.
+          After selecting text, with button 1 still down, pressing
+          button 2 executes Cut and button 3 executes Paste.  After
+          clicking one button, the other undoes the first; thus (while
+          holding down button 1) 2 followed by 3 is a Snarf that
+          leaves the file undirtied; 3 followed by 2 is a no-op.
+          These actions also apply to text selected by double-clicking
+          because the double-click expansion is made when the second
+          click starts, not when it ends.
+
+          Commands may be given extra arguments by a mouse chord with
+          buttons 2 and 1.  While holding down button 2 on text to be
+          executed as a command, clicking button 1 appends the text
+          last pointed to by button 1 as a distinct final argument.
+          For example, to search for literal text one may execute Look
+          text with button 2 or instead point at text with button 1 in
+
+     ACME(1)                                                   ACME(1)
+
+          any window, release button 1, then execute Look, clicking
+          button 1 while 2 is held down.
+
+          When an external command (e.g.  echo(1)) is executed this
+          way, the extra argument is passed as expected and an
+          environment variable $acmeaddr is created that holds, in the
+          form interpreted by button 3, the fully-qualified address of
+          the extra argument.
+
+        Support programs
+          Win creates a new acme window and runs a command (default
+          /bin/rc) in it, turning the window into something analogous
+          to an rio(1) window.  Executing text in a win window with
+          button 2 is similar to using Send.
+
+          Awd loads the tag line of its window with the directory in
+          which it's running, suffixed -label (default rc); it is
+          intended to be executed by a cd function for use in win win-
+          dows.  An example definition is
+               fn cd { builtin cd $1 &amp;&amp; awd $sysname }
+
+        Applications and guide files
+          In the directory /acme live several subdirectories, each
+          corresponding to a program or set of related programs that
+          employ acme's user interface.  Each subdirectory includes
+          source, binaries, and a readme file for further information.
+          It also includes a guide, a text file holding sample com-
+          mands to invoke the programs.  The idea is to find an exam-
+          ple in the guide that best matches the job at hand, edit it
+          to suit, and execute it.
+
+          Whenever a command is executed by acme, the default search
+          path includes the directory of the window containing the
+          command and its subdirectory $cputype.  The program direc-
+          tories in /acme contain appropriately labeled subdirectories
+          of binaries, so commands named in the guide files will be
+          found automatically when run.  Also, acme binds the direc-
+          tories /acme/bin and /acme/bin/$cputype to the beginning of
+          /bin when it starts; this is where acme-specific programs
+          such as win and awd reside.
+
+     FILES
+          $home/acme.dump  default file for Dump and Load; also where
+                           state is written if acme dies or is killed
+                           unexpectedly, e.g. by deleting its window.
+          /acme/*/guide    template files for applications
+          /acme/*/readme   informal documentation for applications
+          /acme/*/src      source for applications
+          /acme/*/mips     MIPS-specific binaries for applications
+
+     SOURCE
+          /sys/src/cmd/acme
+
+     ACME(1)                                                   ACME(1)
+
+          /acme/bin/source/win
+          /sys/src/cmd/awd.c
+
+     SEE ALSO
+          acme(4)
+          Rob Pike, Acme: A User Interface for Programmers.
+
+     BUGS
+          With the -l option or Load command, the recreation of win-
+          dows under control of external programs such as win is just
+          to rerun the command; information may be lost.
+
+</pre>
+</article>
+
+</body></html>
