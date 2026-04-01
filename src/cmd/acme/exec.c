@@ -1546,7 +1546,6 @@ runproc(void *argvp)
 	/*static void *parg[2]; */
 	char *rcarg[4];
 	void **argv;
-	CFsys *fs;
 	char *shell;
 
 	threadsetname("runproc");
@@ -1624,33 +1623,23 @@ runproc(void *argvp)
 			warning(nil, "can't run command: %s\n", t);
 			threadexits("fsysmount");
 		}
-		sprint(buf, "%d", c->md->id);
-		if((fs = nsmount("acme", buf)) == nil){
-			warning(nil, "can't run command: %s\n", t);
-			fsysdelid(c->md);
-			c->md = nil;
-			threadexits("nsmount");
-		}
+		/* Direct pipe setup (no 9P service needed) */
 		if(winid>0 && (pipechar=='|' || pipechar=='>')){
-			sprint(buf, "%d/rdsel", winid);
-			sfd[0] = fsopenfd(fs, buf, OREAD);
+			sfd[0] = pipesel(winid, pipechar=='|');
+			if(sfd[0] < 0)
+				sfd[0] = open("/dev/null", OREAD);
 		}else
 			sfd[0] = open("/dev/null", OREAD);
 		if((winid>0 || iseditcmd) && (pipechar=='|' || pipechar=='<')){
-			if(iseditcmd){
-				if(winid > 0)
-					sprint(buf, "%d/editout", winid);
-				else
-					sprint(buf, "editout");
-			}else
-				sprint(buf, "%d/wrsel", winid);
-			sfd[1] = fsopenfd(fs, buf, OWRITE);
-			sfd[2] = fsopenfd(fs, "cons", OWRITE);
+			if(!iseditcmd)
+				sfd[1] = pipewrsel(winid);
+			else
+				sfd[1] = dup(erroutfd, -1);
+			sfd[2] = dup(erroutfd, -1);
 		}else{
-			sfd[1] = fsopenfd(fs, "cons", OWRITE);
+			sfd[1] = dup(erroutfd, -1);
 			sfd[2] = sfd[1];
 		}
-		fsunmount(fs);
 	}else{
 		rfork(RFFDG|RFNOTEG);
 		fsysclose();

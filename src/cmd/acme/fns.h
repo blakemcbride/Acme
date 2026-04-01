@@ -114,3 +114,7 @@ void	winptyclose(Window*);
 void	flushptyout(void);
 
 extern Channel	*cptyout;	/* chan(void*) */
+
+int	pipesel(int, int);
+int	pipewrsel(int);
+void	flushpipeout(void);

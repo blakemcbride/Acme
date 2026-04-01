@@ -548,6 +548,7 @@ mousethread(void *v)
 		qlock(&row.lk);
 		flushwarnings();
 		flushptyout();
+		flushpipeout();
 		qunlock(&row.lk);
 		flushimage(display, 1);
 		switch(alt(alts)){
@@ -574,6 +575,7 @@ mousethread(void *v)
 		case MPtyout:
 			qlock(&row.lk);
 			flushptyout();
+			flushpipeout();
 			qunlock(&row.lk);
 			flushimage(display, 1);
 			break;

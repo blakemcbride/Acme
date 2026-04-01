@@ -67,6 +67,11 @@ The changes, in rough order:
    Enter.  Output appears inline.  This replaces the original Plan 9
    `win` program, which required 9P infrastructure.
 
+9. **Pipe commands without 9P** — Pipe commands (`|sort`, `<date`,
+   `>wc`) work using direct pipes and temp files instead of the
+   original 9P filesystem.  Select text, type `|sort`, and
+   middle-click it to sort the selection in place.
+
 ## Building
 
 ### Prerequisites
@@ -118,6 +123,7 @@ Acme's interface is unusual.  Here are the essentials:
 
 - **Three mouse buttons** — left selects, middle executes, right searches/opens
 - **Any text is a command** — type `ls -l` anywhere, middle-click it to run
+- **Pipe commands** — select text, type `|sort`, middle-click to sort in place
 - **Tag bar** — the top line of each window contains commands you can execute
 - **Right-click a filename** — opens it
 - **Right-click `file:123`** — opens file at line 123

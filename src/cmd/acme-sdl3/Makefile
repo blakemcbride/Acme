@@ -52,7 +52,7 @@ LIBDRAW = ../../libdraw
 # Local sources (in this directory)
 LOCAL_SRC = drawbridge.c srv-direct.c look.c fsys.c \
 	fontpipe.c openfont.c getsubfont.c \
-	plumb-glue.c plumb-rules.c plumb-match.c win.c
+	plumb-glue.c plumb-rules.c plumb-match.c win.c pipecmd.c
 
 # Acme sources (from ../acme/)
 ACME_SRC = acme.c addr.c buff.c cols.c dat.c disk.c ecmd.c edit.c \
@@ -109,6 +109,9 @@ plumb-match.o: plumb-match.c
 
 win.o: win.c
 	$(CC) $(CFLAGS) -I$(ACME) win.c
+
+pipecmd.o: pipecmd.c
+	$(CC) $(CFLAGS) -I$(ACME) pipecmd.c
 
 # Acme sources
 $(ACME_OBJ): %.o: $(ACME)/%.c
