@@ -123,6 +123,10 @@ Acme's interface is unusual.  Here are the essentials:
 - **Right-click `file:123`** — opens file at line 123
 - **`Win` command** — middle-click `Win` in a tag to open an interactive shell
 
+The `docs/` directory contains detailed documentation including Rob
+Pike's original paper, the Plan 9 manual pages, keyboard and mouse
+shortcut references, and a video tour.
+
 For a full introduction, see Russ Cox's
 [tour of Acme](http://acme.cat-v.org/).
 
