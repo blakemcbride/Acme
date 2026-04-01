@@ -94,6 +94,7 @@ static Rune LSnarf[] = { 'S', 'n', 'a', 'r', 'f', 0 };
 static Rune LSort[] = { 'S', 'o', 'r', 't', 0 };
 static Rune LTab[] = { 'T', 'a', 'b', 0 };
 static Rune LUndo[] = { 'U', 'n', 'd', 'o', 0 };
+static Rune LWin[] = { 'W', 'i', 'n', 0 };
 static Rune LZerox[] = { 'Z', 'e', 'r', 'o', 'x', 0 };
 
 Exectab exectab[] = {
@@ -125,6 +126,7 @@ Exectab exectab[] = {
 	{ LSort,		sort,		FALSE,	XXX,		XXX		},
 	{ LTab,		tab,		FALSE,	XXX,		XXX		},
 	{ LUndo,		undo,	FALSE,	TRUE,	XXX		},
+	{ LWin,		winexec,	FALSE,	XXX,		XXX		},
 	{ LZerox,		zeroxx,	FALSE,	XXX,		XXX		},
 	{ nil, 			0,		0,		0,		0		}
 };
@@ -1103,6 +1105,10 @@ static Rune Lnl[] = { '\n', 0 };
 void
 sendx(Text *et, Text *t, Text *_0, int _1, int _2, Rune *_3, int _4)
 {
+	uint q0, q1, n;
+	char *s;
+	Rune *r;
+
 	USED(_0);
 	USED(_1);
 	USED(_2);
@@ -1112,6 +1118,31 @@ sendx(Text *et, Text *t, Text *_0, int _1, int _2, Rune *_3, int _4)
 	if(et->w==nil)
 		return;
 	t = &et->w->body;
+	if(et->w->ptyfd >= 0){
+		/* Win window: send text from iq1 to end of body to PTY */
+		if(t->q0 != t->q1)
+			cut(t, t, nil, TRUE, FALSE, nil, 0);
+		textsetselect(t, t->file->b.nc, t->file->b.nc);
+		paste(t, t, nil, TRUE, TRUE, nil, 0);
+		if(t->file->b.nc > 0 && textreadc(t, t->file->b.nc-1) != '\n'){
+			textinsert(t, t->file->b.nc, Lnl, 1, TRUE);
+			textsetselect(t, t->file->b.nc, t->file->b.nc);
+		}
+		q0 = et->w->ptyboundary;
+		q1 = t->file->b.nc;
+		if(q1 > q0){
+			n = q1 - q0;
+			r = runemalloc(n);
+			bufread(&t->file->b, q0, r, n);
+			s = runetobyte(r, n);
+			write(et->w->ptyfd, s, strlen(s));
+			free(s);
+			free(r);
+		}
+		et->w->ptyboundary = t->file->b.nc;
+		textshow(t, t->file->b.nc, t->file->b.nc, 1);
+		return;
+	}
 	if(t->q0 != t->q1)
 		cut(t, t, nil, TRUE, FALSE, nil, 0);
 	textsetselect(t, t->file->b.nc, t->file->b.nc);
@@ -1590,12 +1621,12 @@ runproc(void *argvp)
 		}
 		c->md = fsysmount(rdir, ndir, incl, nincl);
 		if(c->md == nil){
-			fprint(2, "child: can't allocate mntdir: %r\n");
+			warning(nil, "can't run command: %s\n", t);
 			threadexits("fsysmount");
 		}
 		sprint(buf, "%d", c->md->id);
 		if((fs = nsmount("acme", buf)) == nil){
-			fprint(2, "child: can't mount acme: %r\n");
+			warning(nil, "can't run command: %s\n", t);
 			fsysdelid(c->md);
 			c->md = nil;
 			threadexits("nsmount");

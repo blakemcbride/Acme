@@ -107,3 +107,10 @@ Range range(int, int);
 #define	runemove(a, b, c)	memmove((a), (b), (c)*sizeof(Rune))
 
 int	ismtpt(char*);
+
+void	winexec(Text*, Text*, Text*, int, int, Rune*, int);
+void	winptytype(Window*, Text*, Rune);
+void	winptyclose(Window*);
+void	flushptyout(void);
+
+extern Channel	*cptyout;	/* chan(void*) */

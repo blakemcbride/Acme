@@ -123,3 +123,8 @@ For a full introduction, see Russ Cox's
 
 This project inherits the plan9port license.  See the `LICENSE` file
 for details.
+
+------
+
+child: can't mount acme: dial unix!/tmp/ns.blake.:0/acme: connect /tmp/ns.blake.:0/acme: No such file or directory
+

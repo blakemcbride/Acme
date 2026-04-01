@@ -58,5 +58,6 @@ Channel	*cexit;		/* chan(int) */
 Channel	*cerr;		/* chan(char*) */
 Channel	*cedit;		/* chan(int) */
 Channel	*cwarn;		/* chan(void*)[1] (really chan(unit)[1]) */
+Channel	*cptyout;	/* chan(void*)[1] - signals PTY output ready */
 
 QLock	editoutlk;

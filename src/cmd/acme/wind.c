@@ -33,6 +33,9 @@ wininit(Window *w, Window *clone, Rectangle r)
 		incref(&w->ref);
 	w->ctlfid = ~0;
 	w->utflastqid = -1;
+	w->ptyfd = -1;
+	w->ptypid = 0;
+	w->ptyboundary = 0;
 	r1 = r;
 
 	w->tagtop = r;
@@ -319,6 +322,7 @@ winclose(Window *w)
 	int i;
 
 	if(decref(&w->ref) == 0){
+		winptyclose(w);
 		xfidlog(w, "del");
 		windirfree(w);
 		textclose(&w->tag);
@@ -402,6 +406,10 @@ wintype(Window *w, Text *t, Rune r)
 {
 	int i;
 
+	if(w->ptyfd >= 0 && t->what == Body){
+		winptytype(w, t, r);
+		return;
+	}
 	texttype(t, r);
 	if(t->what == Body)
 		for(i=0; i<t->file->ntext; i++)

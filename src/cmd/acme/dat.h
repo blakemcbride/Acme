@@ -274,6 +274,9 @@ struct Window
 	int		taglines;
 	Rectangle	tagtop;
 	QLock	editoutlk;
+	int		ptyfd;		/* PTY master fd for Win windows, -1 if not a win */
+	int		ptypid;		/* PID of shell process */
+	uint		ptyboundary;	/* body position where shell output ends / user input begins */
 };
 
 void	wininit(Window*, Window*, Rectangle);

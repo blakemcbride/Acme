@@ -194,7 +194,8 @@ threadmain(int argc, char *argv[])
 	cedit = chancreate(sizeof(int), 0);
 	cexit = chancreate(sizeof(int), 0);
 	cwarn = chancreate(sizeof(void*), 1);
-	if(cwait==nil || ccommand==nil || ckill==nil || cxfidalloc==nil || cxfidfree==nil || cerr==nil || cexit==nil || cwarn==nil){
+	cptyout = chancreate(sizeof(void*), 1);
+	if(cwait==nil || ccommand==nil || ckill==nil || cxfidalloc==nil || cxfidfree==nil || cerr==nil || cexit==nil || cwarn==nil || cptyout==nil){
 		fprint(2, "acme: can't create initial channels: %r\n");
 		threadexitsall("channels");
 	}
@@ -207,6 +208,7 @@ threadmain(int argc, char *argv[])
 	chansetname(cedit, "cedit");
 	chansetname(cexit, "cexit");
 	chansetname(cwarn, "cwarn");
+	chansetname(cptyout, "cptyout");
 
 	mousectl = initmouse(nil, screen);
 	if(mousectl == nil){
@@ -517,7 +519,7 @@ mousethread(void *v)
 	Plumbmsg *pm;
 	Mouse m;
 	char *act;
-	enum { MResize, MMouse, MPlumb, MWarnings, NMALT };
+	enum { MResize, MMouse, MPlumb, MWarnings, MPtyout, NMALT };
 	enum { Shift = 5 };
 	static Alt alts[NMALT+1];
 
@@ -535,6 +537,9 @@ mousethread(void *v)
 	alts[MWarnings].c = cwarn;
 	alts[MWarnings].v = nil;
 	alts[MWarnings].op = CHANRCV;
+	alts[MPtyout].c = cptyout;
+	alts[MPtyout].v = nil;
+	alts[MPtyout].op = CHANRCV;
 	if(cplumb == nil)
 		alts[MPlumb].op = CHANNOP;
 	alts[NMALT].op = CHANEND;
@@ -542,6 +547,7 @@ mousethread(void *v)
 	for(;;){
 		qlock(&row.lk);
 		flushwarnings();
+		flushptyout();
 		qunlock(&row.lk);
 		flushimage(display, 1);
 		switch(alt(alts)){
@@ -564,6 +570,12 @@ mousethread(void *v)
 			plumbfree(pm);
 			break;
 		case MWarnings:
+			break;
+		case MPtyout:
+			qlock(&row.lk);
+			flushptyout();
+			qunlock(&row.lk);
+			flushimage(display, 1);
 			break;
 		case MMouse:
 			/*
