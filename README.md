@@ -61,6 +61,12 @@ The changes, in rough order:
    Plan 9 commands and tools have been stripped out.  What remains is
    acme and the libraries it depends on.
 
+8. **Built-in Win command** — Type `Win` in a tag bar and middle-click
+   it to open an interactive shell session inside an acme window.
+   Commands are typed directly into the buffer and executed by pressing
+   Enter.  Output appears inline.  This replaces the original Plan 9
+   `win` program, which required 9P infrastructure.
+
 ## Building
 
 ### Prerequisites
@@ -115,6 +121,7 @@ Acme's interface is unusual.  Here are the essentials:
 - **Tag bar** — the top line of each window contains commands you can execute
 - **Right-click a filename** — opens it
 - **Right-click `file:123`** — opens file at line 123
+- **`Win` command** — middle-click `Win` in a tag to open an interactive shell
 
 For a full introduction, see Russ Cox's
 [tour of Acme](http://acme.cat-v.org/).
@@ -123,8 +130,4 @@ For a full introduction, see Russ Cox's
 
 This project inherits the plan9port license.  See the `LICENSE` file
 for details.
-
-------
-
-child: can't mount acme: dial unix!/tmp/ns.blake.:0/acme: connect /tmp/ns.blake.:0/acme: No such file or directory
 
