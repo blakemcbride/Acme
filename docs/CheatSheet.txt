@@ -1,0 +1,129 @@
+Acme Cheat sheet
+
+## Mouse buttons
+
+* **Button 1**: select text. Double-clicking uses the usual expansion behavior. ([FreeBSD Manual Pages][1])
+* **Button 2**: execute command text. If you click on a null string, Acme expands around the click to find the command. ([FreeBSD Manual Pages][1])
+* **Button 3**: open files, follow addresses, or search for literal text. ([FreeBSD Manual Pages][1])
+
+## The standard built-in commands
+
+These are the Acme commands conventionally written with an initial capital letter and executed with **button 2**. ([FreeBSD Manual Pages][1])
+
+### Editing and clipboard
+
+* **Cut** — delete the most recently selected text and put it in the snarf buffer. Use **button 2** on `Cut`. ([FreeBSD Manual Pages][1])
+* **Paste** — replace the most recently selected text with the snarf buffer. Use **button 2** on `Paste`. ([FreeBSD Manual Pages][1])
+* **Snarf** — copy the selected text into the snarf buffer without deleting it. Use **button 2** on `Snarf`. ([FreeBSD Manual Pages][1])
+* **Undo** — undo the last textual change or set of changes. Use **button 2** on `Undo`. ([FreeBSD Manual Pages][1])
+* **Redo** — redo what Undo reversed. Use **button 2** on `Redo`. ([FreeBSD Manual Pages][1])
+
+### Window and column management
+
+* **Del** — delete the current window, but if it is dirty Acme warns first; a second `Del` succeeds. Use **button 2**. ([FreeBSD Manual Pages][1])
+* **Delete** — delete the current window without the dirtiness check. Use **button 2**. ([FreeBSD Manual Pages][1])
+* **Delcol** — delete the current column and all its windows, after checking they are not dirty. Use **button 2**. ([FreeBSD Manual Pages][1])
+* **New** — make a new window; with file arguments, load those files into windows. Use **button 2**. ([FreeBSD Manual Pages][1])
+* **Newcol** — make a new column. Use **button 2**. ([FreeBSD Manual Pages][1])
+* **Zerox** — make a copy of the window containing the most recently selected text. Use **button 2**. ([FreeBSD Manual Pages][1])
+* **Sort** — sort windows in the column lexicographically by name. Use **button 2**. ([FreeBSD Manual Pages][1])
+
+### File I/O and session state
+
+* **Get** — reload a file into the window, replacing its contents after the usual dirtiness check. With an argument, load that file but do not rename the window. Use **button 2**. ([FreeBSD Manual Pages][1])
+* **Put** — write the window to its file; with an argument, write to the named file. Use **button 2**. ([FreeBSD Manual Pages][1])
+* **Putall** — write all dirty windows whose names indicate existing regular files. Use **button 2**. ([FreeBSD Manual Pages][1])
+* **Dump** — save the state of Acme, defaulting to `$HOME/acme.dump`. Use **button 2**. ([FreeBSD Manual Pages][1])
+* **Load** — restore Acme state from a dump file, defaulting to `$HOME/acme.dump`. Use **button 2**. ([FreeBSD Manual Pages][1])
+* **Exit** — exit Acme after checking that windows are not dirty. Use **button 2**. ([FreeBSD Manual Pages][1])
+
+### Searching and addressing
+
+* **Look** — search the body for a **literal** text occurrence, using its argument or, if none is given, the selected text in the body. Use **button 2** on `Look` or on `Look text`. ([FreeBSD Manual Pages][1])
+* **Edit** — run a **sam-style editing command** on the current window body. Acme implements the sam language except `k`, `n`, `q`, and `!`; `=` is slightly different. Use **button 2** on `Edit ...`. ([FreeBSD Manual Pages][1])
+
+### Environment and formatting
+
+* **Font** — toggle between fixed and proportional fonts with no argument, or set the font from a named file. Prefixing the font name with `var` or `fix` also changes the default for future windows. Use **button 2**. ([FreeBSD Manual Pages][1])
+* **Tab** — set the tab width for the current window; with no argument it prints the current value. Use **button 2**. ([FreeBSD Manual Pages][1])
+* **Indent** — set autoindent mode. `on`/`off` affect the current window; `ON`/`OFF` affect all existing and future windows. Use **button 2**. ([FreeBSD Manual Pages][1])
+* **Incl** — add supplementary include directories for opening `<...>` include files with button 3; with no arguments it prints the current list. Use **button 2**. ([FreeBSD Manual Pages][1])
+* **Local** — in native Plan 9 it runs the following command in Acme’s own namespace/environment group; on Unix/plan9port it is recognized but has no effect. Use **button 2**. ([FreeBSD Manual Pages][1])
+
+### Process-related
+
+* **Kill** — send a kill note to Acme-initiated commands named in the arguments. Use **button 2**. ([FreeBSD Manual Pages][1])
+* **Send** — append the selected text, or the snarf buffer, to the end of the body; mainly used with `win`. Use **button 2**. ([FreeBSD Manual Pages][1])
+* **ID** — print the window ID number. Use **button 2**. ([FreeBSD Manual Pages][1])
+
+## Pipe-style command prefixes
+
+These are **not separate built-ins**. They are ordinary shell commands prefixed by one of these characters and executed with **button 2**. They act on the **selected text in the body**. ([FreeBSD Manual Pages][1])
+
+* **`< command`** — replace the selection with the command’s standard output. Use **button 2**. ([FreeBSD Manual Pages][1])
+* **`> command`** — send the selection to the command’s standard input. The selection itself is not replaced. Use **button 2**. ([FreeBSD Manual Pages][1])
+* **`| command`** — pipe the selection through the command: send selection to stdin and replace it with stdout. Use **button 2**. ([FreeBSD Manual Pages][1])
+
+Examples:
+
+* `|sort`
+* `|fmt`
+* `<date`
+* `>lp`
+  Execute each with **button 2**. The command output and errors go to the appropriate `+Errors` window based on the window’s directory context. ([FreeBSD Manual Pages][1])
+
+## Button 3 actions: open, go to, and search
+
+With **button 3**, Acme interprets the pointed-at text by context. ([FreeBSD Manual Pages][1])
+
+* Existing window name → jump to that window. ([FreeBSD Manual Pages][1])
+* Existing file name → open it in a new window if needed. ([FreeBSD Manual Pages][1])
+* Include file like `<u.h>` → search include directories, including those added by `Incl`. ([FreeBSD Manual Pages][1])
+* Text starting with `:` → treat as a sam-style address in the current window. Examples: `:127`, `:/regexp/`. ([FreeBSD Manual Pages][1])
+* Text like `file.c:27` → open the file and go to the address. ([FreeBSD Manual Pages][1])
+* Anything else → literal text search in the current window body. Repeated **button 3** clicks continue to the next match. Holding **Shift** reverses the search direction. ([FreeBSD Manual Pages][1])
+
+## Mouse chords
+
+Acme binds a few multiple-button actions. ([FreeBSD Manual Pages][1])
+
+* Hold **button 1** to select text, then press **button 2** → **Cut**. ([FreeBSD Manual Pages][1])
+* Hold **button 1** to select text, then press **button 3** → **Paste**. ([FreeBSD Manual Pages][1])
+* While holding **button 1**, do **2 then 3** → **Snarf** without dirtying the file. ([FreeBSD Manual Pages][1])
+
+## Extra argument chord for commands
+
+Commands executed with **button 2** can be given an extra argument using a **2-1 chord**. While holding **button 2** on the command text, click **button 1** on the argument text; Acme appends that text as a distinct final argument. The docs give `Look` as the example. ([FreeBSD Manual Pages][1])
+
+Example:
+
+* point at `Look`
+* hold **button 2**
+* click desired search text with **button 1**
+  That is equivalent to executing `Look thatText`. ([FreeBSD Manual Pages][1])
+
+## External shell commands
+
+If text executed with **button 2** is **not** a recognized built-in, Acme runs it as a shell command. Standard output and standard error go to the directory-specific `+Errors` window. The shell is controlled by `$acmeshell` and defaults to `rc`. ([FreeBSD Manual Pages][1])
+
+## `Win`
+
+`Win` is a **support program**, not one of the built-in Acme commands above. It creates a new Acme window and runs a command in it, defaulting to `$SHELL`, making the window behave somewhat like a terminal window. In a `Win` window, executing text with **button 2** behaves similarly to `Send`. ([FreeBSD Manual Pages][1])
+
+## Practical mini-reference
+
+These are the ones most people use constantly:
+
+* **Search next literal**: select with **button 1**, then **button 3** on it. ([FreeBSD Manual Pages][1])
+* **Search regex**: type `:/re/`, then **button 3**. ([FreeBSD Manual Pages][1])
+* **Go to line**: type `:123`, then **button 3**. ([FreeBSD Manual Pages][1])
+* **Run shell filter on selection**: type `|sort`, then **button 2**. ([FreeBSD Manual Pages][1])
+* **Replace selection with command output**: type `<date`, then **button 2**. ([FreeBSD Manual Pages][1])
+* **Send selection to command stdin**: type `>lp`, then **button 2**. ([FreeBSD Manual Pages][1])
+* **Save file**: **button 2** on `Put`. ([FreeBSD Manual Pages][1])
+* **Reload file**: **button 2** on `Get`. ([FreeBSD Manual Pages][1])
+* **Open `file.c` line 27**: **button 3** on `file.c:27`. ([FreeBSD Manual Pages][1])
+
+One important boundary: **`Edit` uses the sam command language**, which is a separate editing language embedded inside Acme. I did not enumerate the whole sam command set here. ([FreeBSD Manual Pages][1])
+
+
