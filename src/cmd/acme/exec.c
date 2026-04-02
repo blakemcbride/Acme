@@ -1663,7 +1663,7 @@ runproc(void *argvp)
 			continue;
 		if(r < ' ')
 			goto Hard;
-		if(utfrune("#;&|^$=`'{}()<>[]*?^~`/", r))
+		if(utfrune("#;&|^$=`'{}()<>[]*?^~`", r))
 			goto Hard;
 		inarg = TRUE;
 	}
@@ -1748,7 +1748,7 @@ Hard:
 		dir = runetobyte(rdir, ndir);
 	shell = acmeshell;
 	if(shell == nil)
-		shell = "rc";
+		shell = "sh";
 	rcarg[0] = shell;
 	rcarg[1] = "-c";
 	rcarg[2] = t;

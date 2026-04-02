@@ -217,9 +217,29 @@ pipewrsel(int winid)
 {
 	int p[2];
 	Pipearg *a;
+	Window *w;
+	Text *t;
 
 	if(pipe(p) < 0)
 		return open("/dev/null", OWRITE);
+
+	/*
+	 * Match the 9P wrsel-open semantics (xfid.c):
+	 * cut the current selection and set wrselrange
+	 * so output is inserted at the selection point.
+	 */
+	w = lookid(winid, 0);
+	if(w != nil){
+		winlock(w, 'F');
+		t = &w->body;
+		wincommit(w, t);
+		seq++;
+		filemark(t->file);
+		cut(t, t, nil, FALSE, TRUE, nil, 0);
+		w->wrselrange = range(t->q1, t->q1);
+		w->nomark = TRUE;
+		winunlock(w);
+	}
 
 	a = emalloc(sizeof(Pipearg));
 	a->fd = p[0];

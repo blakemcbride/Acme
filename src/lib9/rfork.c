@@ -107,6 +107,14 @@ p9rfork(int flags)
 		werrstr("cannot use rfork for shared memory -- use libthread");
 		return -1;
 	}
+	if(flags&RFFDG){
+		/* RFFDG without RFPROC is a no-op on Unix */
+		flags &= ~RFFDG;
+	}
+	if(flags&RFENVG){
+		/* RFENVG without RFPROC is a no-op on Unix */
+		flags &= ~RFENVG;
+	}
 	if(flags&RFNAMEG){
 		/* XXX set $NAMESPACE to a new directory */
 		flags &= ~RFNAMEG;
