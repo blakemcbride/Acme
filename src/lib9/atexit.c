@@ -51,6 +51,6 @@ exits(char *s)
 			(*f)();
 		}
 	if(s == 0 || *s == 0)
-		exit(0);
-	exit(exitcode(s));
+		_exit(0);
+	_exit(exitcode(s));
 }

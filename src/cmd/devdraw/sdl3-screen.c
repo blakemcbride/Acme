@@ -673,8 +673,20 @@ sdlloop(void)
 void
 gfx_main(void)
 {
+	/* Silence libdecor "failed to load plugin" warnings on stderr */
+	int devnull = open("/dev/null", O_WRONLY);
+	int saved_stderr = -1;
+	if(devnull >= 0){
+		saved_stderr = dup(2, -1);
+		dup(devnull, 2);
+		close(devnull);
+	}
 	if(!SDL_Init(SDL_INIT_VIDEO))
 		sysfatal("SDL_Init: %s", SDL_GetError());
+	if(saved_stderr >= 0){
+		dup(saved_stderr, 2);
+		close(saved_stderr);
+	}
 
 	flushevent = SDL_RegisterEvents(3);
 	if(flushevent == 0)
