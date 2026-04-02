@@ -1,8 +1,8 @@
 # Standalone Acme Editor for Linux
 
 A self-contained build of the [acme](http://acme.cat-v.org) text editor
-that runs on modern Linux systems with no external dependencies on
-Plan 9 tools or infrastructure.
+that runs on modern Linux systems (X11 or Wayland) with no external
+dependencies on Plan 9 tools or infrastructure.
 
 ## What is Acme?
 
