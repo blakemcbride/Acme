@@ -72,6 +72,13 @@ The changes, in rough order:
    original 9P filesystem.  Select text, type `|sort`, and
    middle-click it to sort the selection in place.
 
+10. **Conventional keyboard navigation** — Arrow keys, Home, End, Page
+    Up, Page Down, and Delete work as expected in a modern editor.  Up
+    and down arrows move the cursor one line at a time with sticky
+    column tracking.  Ctrl+arrow combinations provide additional
+    navigation (beginning/end of line, page scroll, jump to start/end
+    of file).  See `KeyBoard.md` for the full reference.
+
 ## Building
 
 ### Prerequisites
