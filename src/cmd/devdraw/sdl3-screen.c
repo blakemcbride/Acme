@@ -313,16 +313,16 @@ sdltoplan9kbd(SDL_Keycode k, SDL_Keymod mod)
 	case SDLK_BACKSPACE:	return '\b';
 	case SDLK_TAB:		return '\t';
 	case SDLK_ESCAPE:	return 0x1b;
-	case SDLK_DELETE:	return 0x7f;
+	case SDLK_DELETE:	return Kfwddel;
 
-	case SDLK_HOME:		return Khome;
-	case SDLK_END:		return Kend;
-	case SDLK_LEFT:		return Kleft;
-	case SDLK_RIGHT:	return Kright;
-	case SDLK_UP:		return Kup;
-	case SDLK_DOWN:		return Kdown;
-	case SDLK_PAGEUP:	return Kpgup;
-	case SDLK_PAGEDOWN:	return Kpgdown;
+	case SDLK_HOME:		return (mod & SDL_KMOD_CTRL) ? Kchome : Khome;
+	case SDLK_END:		return (mod & SDL_KMOD_CTRL) ? Kcend : Kend;
+	case SDLK_LEFT:		return (mod & SDL_KMOD_CTRL) ? 0x01 : Kleft;
+	case SDLK_RIGHT:	return (mod & SDL_KMOD_CTRL) ? 0x05 : Kright;
+	case SDLK_UP:		return (mod & SDL_KMOD_CTRL) ? Kpgup : Kup;
+	case SDLK_DOWN:		return (mod & SDL_KMOD_CTRL) ? Kpgdown : Kdown;
+	case SDLK_PAGEUP:	return (mod & SDL_KMOD_CTRL) ? Kchome : Kpgup;
+	case SDLK_PAGEDOWN:	return (mod & SDL_KMOD_CTRL) ? Kcend : Kpgdown;
 	case SDLK_INSERT:	return Kins;
 
 	case SDLK_KP_0:	return '0';
@@ -532,8 +532,17 @@ sdlloop(void)
 				break;
 			}
 
-			/* Update modifier-based mouse buttons */
-			{
+			/* Update modifier-based mouse buttons (skip for navigation keys,
+			 * and clear any fake button state from prior Ctrl/Alt press) */
+			if(ev.key.key == SDLK_UP || ev.key.key == SDLK_DOWN
+			|| ev.key.key == SDLK_LEFT || ev.key.key == SDLK_RIGHT
+			|| ev.key.key == SDLK_HOME || ev.key.key == SDLK_END
+			|| ev.key.key == SDLK_PAGEUP || ev.key.key == SDLK_PAGEDOWN) {
+				if(kbuttons) {
+					kbuttons = 0;
+					gfx_mousetrack(w->client, mousex, mousey, buttons, mousems);
+				}
+			} else {
 				int oldkb = kbuttons;
 				kbuttons = 0;
 				if(mod & SDL_KMOD_CTRL)
@@ -579,8 +588,11 @@ sdlloop(void)
 				gfx_keystroke(w->client, Kalt);
 			}
 
-			/* Update modifier-based mouse buttons */
-			{
+			/* Update modifier-based mouse buttons (skip for navigation keys) */
+			if(ev.key.key != SDLK_UP && ev.key.key != SDLK_DOWN
+			&& ev.key.key != SDLK_LEFT && ev.key.key != SDLK_RIGHT
+			&& ev.key.key != SDLK_HOME && ev.key.key != SDLK_END
+			&& ev.key.key != SDLK_PAGEUP && ev.key.key != SDLK_PAGEDOWN) {
 				int oldkb = kbuttons;
 				kbuttons = 0;
 				if(mod & SDL_KMOD_CTRL)

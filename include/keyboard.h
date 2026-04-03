@@ -29,6 +29,9 @@ enum {
 	Kpgdown=	KF|0x13,
 	Kins=	KF|0x14,
 	Kend=	KF|0x18,
+	Kchome=	KF|0x19,	/* Ctrl+Home */
+	Kcend=	KF|0x1A,	/* Ctrl+End */
+	Kfwddel=	KF|0x1B,	/* forward delete */
 
 	Kalt=		KF|0x15,
 	Kshift=	KF|0x16,

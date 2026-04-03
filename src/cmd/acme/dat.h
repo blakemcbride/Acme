@@ -196,6 +196,7 @@ struct Text
 	Rune	*cache;
 	int	nofill;
 	int	needundo;
+	int	goalx;	/* sticky column for up/down arrow, -1 if not set */
 };
 
 uint		textbacknl(Text*, uint, uint);

@@ -32,6 +32,7 @@ textinit(Text *t, File *f, Rectangle r, Reffont *rf, Image *cols[NCOL])
 	r.min.x += Scrollwid+Scrollgap;
 	t->eq0 = ~0;
 	t->ncache = 0;
+	t->goalx = -1;
 	t->reffont = rf;
 	t->tabstop = maxtab;
 	memmove(t->fr.cols, cols, sizeof t->fr.cols);
@@ -672,12 +673,15 @@ texttype(Text *t, Rune r)
 	int nr;
 	Rune *rp;
 	Text *u;
+	Point p;
 
 	if(t->what!=Body && t->what!=Tag && r=='\n')
 		return;
 	if(t->what == Tag)
 		t->w->tagsafe = FALSE;
 
+	if(r != Kup && r != Kdown)
+		t->goalx = -1;
 	nr = 1;
 	rp = &r;
 	switch(r){
@@ -691,11 +695,35 @@ texttype(Text *t, Rune r)
 		if(t->q1 < t->file->b.nc)
 			textshow(t, t->q1+1, t->q1+1, TRUE);
 		return;
+	case Kfwddel:
+		typecommit(t);
+		if(t->q0 < t->file->b.nc) {
+			textdelete(t, t->q0, t->q0+1, TRUE);
+			textsetselect(t, t->q0, t->q0);
+			textfill(t);
+		}
+		t->iq1 = t->q0;
+		return;
 	case Kdown:
+		typecommit(t);
 		if(t->what == Tag)
 			goto Tagdown;
-		n = t->fr.maxlines/3;
-		goto case_Down;
+		p = frptofchar(&t->fr, t->q0-t->org);
+		if(t->goalx < 0)
+			t->goalx = p.x;
+		p.x = t->goalx;
+		p.y += t->fr.font->height;
+		if(p.y >= t->fr.r.max.y) {
+			/* scroll down one line, then place cursor on last visible line */
+			q0 = t->org+frcharofpt(&t->fr, Pt(t->fr.r.min.x, t->fr.r.min.y+t->fr.font->height));
+			textsetorigin(t, q0, TRUE);
+			p.y = t->fr.r.min.y + (t->fr.nlines-1)*t->fr.font->height;
+			if(p.y < t->fr.r.min.y)
+				p.y = t->fr.r.min.y;
+		}
+		q0 = t->org+frcharofpt(&t->fr, p);
+		textshow(t, q0, q0, TRUE);
+		return;
 	case Kscrollonedown:
 		if(t->what == Tag)
 			goto Tagdown;
@@ -704,46 +732,63 @@ texttype(Text *t, Rune r)
 			n = 1;
 		goto case_Down;
 	case Kpgdown:
-		n = 2*t->fr.maxlines/3;
+		if(t->org+t->fr.nchars >= t->file->b.nc)
+			return;
+		n = t->fr.maxlines;
 	case_Down:
 		q0 = t->org+frcharofpt(&t->fr, Pt(t->fr.r.min.x, t->fr.r.min.y+n*t->fr.font->height));
 		textsetorigin(t, q0, TRUE);
 		return;
 	case Kup:
+		typecommit(t);
 		if(t->what == Tag)
 			goto Tagup;
-		n = t->fr.maxlines/3;
-		goto case_Up;
+		p = frptofchar(&t->fr, t->q0-t->org);
+		if(t->goalx < 0)
+			t->goalx = p.x;
+		p.x = t->goalx;
+		p.y -= t->fr.font->height;
+		if(p.y < t->fr.r.min.y) {
+			/* scroll up one line, then place cursor on first visible line */
+			q0 = textbacknl(t, t->org, 1);
+			textsetorigin(t, q0, TRUE);
+			p.y = t->fr.r.min.y;
+		}
+		q0 = t->org+frcharofpt(&t->fr, p);
+		textshow(t, q0, q0, TRUE);
+		return;
 	case Kscrolloneup:
 		if(t->what == Tag)
 			goto Tagup;
 		n = mousescrollsize(t->fr.maxlines);
 		goto case_Up;
 	case Kpgup:
-		n = 2*t->fr.maxlines/3;
+		n = t->fr.maxlines;
 	case_Up:
 		q0 = textbacknl(t, t->org, n);
 		textsetorigin(t, q0, TRUE);
 		return;
 	case Khome:
 		typecommit(t);
-		if(t->org > t->iq1) {
-			q0 = textbacknl(t, t->iq1, 1);
-			textsetorigin(t, q0, TRUE);
-		} else
-			textshow(t, 0, 0, FALSE);
+		textshow(t, t->org, t->org, TRUE);
 		return;
 	case Kend:
 		typecommit(t);
-		if(t->iq1 > t->org+t->fr.nchars) {
-			if(t->iq1 > t->file->b.nc) {
-				// should not happen, but does. and it will crash textbacknl.
-				t->iq1 = t->file->b.nc;
-			}
-			q0 = textbacknl(t, t->iq1, 1);
-			textsetorigin(t, q0, TRUE);
-		} else
-			textshow(t, t->file->b.nc, t->file->b.nc, FALSE);
+		n = t->fr.nlines - 1;
+		if(n < 0)
+			n = 0;
+		q0 = t->org+frcharofpt(&t->fr, Pt(t->fr.r.min.x, t->fr.r.min.y+n*t->fr.font->height));
+		textshow(t, q0, q0, TRUE);
+		return;
+	case Kchome:
+		typecommit(t);
+		textsetselect(t, 0, 0);
+		textshow(t, 0, 0, FALSE);
+		return;
+	case Kcend:
+		typecommit(t);
+		textsetselect(t, t->file->b.nc, t->file->b.nc);
+		textshow(t, t->file->b.nc, t->file->b.nc, FALSE);
 		return;
 	case 0x01:	/* ^A: beginning of line */
 		typecommit(t);
@@ -1012,6 +1057,7 @@ textselect(Text *t)
 	enum { None, Cut, Paste };
 
 	selecttext = t;
+	t->goalx = -1;
 	/*
 	 * To have double-clicking and chording, we double-click
 	 * immediately if it might make sense.
