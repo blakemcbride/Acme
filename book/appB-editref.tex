@@ -1,0 +1,102 @@
+\chapter{Edit Command Reference}
+\label{app:editref}
+
+\index{Edit command!reference}
+
+This appendix summarizes the sam editing language available via acme's
+\cmd{Edit} command.  See Chapter~\ref{ch:edit} for tutorial coverage.
+
+\section{Addresses}
+
+\begin{longtable}{@{}lp{3.5in}@{}}
+\toprule
+Address & Meaning \\
+\midrule
+\endhead
+\texttt{.} & Current selection (dot). \\
+\texttt{0} & Beginning of file. \\
+\texttt{\$} & End of file. \\
+\texttt{\textit{n}} & Line \textit{n} (1-based). \\
+\texttt{\#\textit{n}} & Character \textit{n} (0-based). \\
+\texttt{/\textit{re}/} & Next match of regex \textit{re} forward. \\
+\texttt{?\textit{re}?} & Next match of regex \textit{re} backward. \\
+\texttt{\textit{a},\textit{b}} & Range from \textit{a} to \textit{b}. \\
+\texttt{\textit{a};\textit{b}} & Range; set dot to \textit{a} before evaluating
+  \textit{b}. \\
+\texttt{\textit{a}+\textit{b}} & \textit{b} relative to end of \textit{a}. \\
+\texttt{\textit{a}-\textit{b}} & \textit{b} relative to start of \textit{a},
+  backward. \\
+\texttt{,} & Shorthand for \texttt{0,\$} (entire file). \\
+\bottomrule
+\end{longtable}
+
+\section{Commands}
+
+\begin{longtable}{@{}lp{3.5in}@{}}
+\toprule
+Command & Action \\
+\midrule
+\endhead
+\texttt{a/\textit{text}/} & Append \textit{text} after addressed range. \\
+\texttt{c/\textit{text}/} & Change: replace addressed range with \textit{text}. \\
+\texttt{d} & Delete addressed range. \\
+\texttt{i/\textit{text}/} & Insert \textit{text} before addressed range. \\
+\texttt{m \textit{addr}} & Move addressed range to after \textit{addr}. \\
+\texttt{p} & Print addressed range. \\
+\texttt{s/\textit{re}/\textit{text}/} & Substitute first match of \textit{re}. \\
+\texttt{s/\textit{re}/\textit{text}/g} & Substitute all matches. \\
+\texttt{t \textit{addr}} & Copy addressed range to after \textit{addr}. \\
+\texttt{=} & Print address (line number and character offset). \\
+\bottomrule
+\end{longtable}
+
+\section{Structural Commands}
+
+\begin{longtable}{@{}lp{3.5in}@{}}
+\toprule
+Command & Action \\
+\midrule
+\endhead
+\texttt{x/\textit{re}/\textit{cmd}} & Extract: for each match of \textit{re}, set
+  dot to match and run \textit{cmd}. \\
+\texttt{y/\textit{re}/\textit{cmd}} & Complement: for each stretch between
+  matches, set dot and run \textit{cmd}. \\
+\texttt{g/\textit{re}/\textit{cmd}} & Guard: run \textit{cmd} if addressed text
+  matches \textit{re}. \\
+\texttt{v/\textit{re}/\textit{cmd}} & Inverse guard: run \textit{cmd} if addressed
+  text does \emph{not} match \textit{re}. \\
+\texttt{\{ \textit{cmds} \}} & Group multiple commands. \\
+\bottomrule
+\end{longtable}
+
+\section{Multi-File Commands}
+
+\begin{longtable}{@{}lp{3.5in}@{}}
+\toprule
+Command & Action \\
+\midrule
+\endhead
+\texttt{X/\textit{re}/\textit{cmd}} & For each file whose name matches
+  \textit{re}, run \textit{cmd}. \\
+\texttt{Y/\textit{re}/\textit{cmd}} & For each file whose name does \emph{not}
+  match \textit{re}, run \textit{cmd}. \\
+\bottomrule
+\end{longtable}
+
+\section{Substitute Backreferences}
+
+In the replacement text of \texttt{s} commands:
+
+\begin{longtable}{@{}lp{3.5in}@{}}
+\toprule
+Token & Meaning \\
+\midrule
+\endhead
+\texttt{\&} & Entire match. \\
+\texttt{\textbackslash 1} \ldots\ \texttt{\textbackslash 9} &
+  Captured subexpressions. \\
+\texttt{\textbackslash n} & Literal newline. \\
+\texttt{\textbackslash t} & Literal tab. \\
+\texttt{\textbackslash\textbackslash} & Literal backslash. \\
+\bottomrule
+\end{longtable}

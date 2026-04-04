@@ -1,0 +1,167 @@
+\chapter{The Acme Screen}
+\label{ch:screen}
+
+\index{screen layout}
+
+When acme starts, you see a deceptively simple display.  There are no
+menus, no toolbars, no status bar, no file tree.  There is only text,
+arranged in columns and windows.  Every element on screen is either
+text you can edit or a border you can drag.
+
+\section{Anatomy of the Display}
+
+The acme screen is divided into a hierarchy:
+
+\begin{enumerate}
+\item A \textbf{top-level tag bar} spans the full width of the screen.
+\item Below it, one or more \textbf{columns} are arranged side by side.
+\item Each column contains one or more \textbf{windows}, stacked vertically.
+\item Each window has its own \textbf{tag bar} and \textbf{body}.
+\end{enumerate}
+
+\subsection{The Top Tag Bar}
+\index{tag bar!top-level}
+
+The top tag bar shows global information and commands.  A typical top
+tag bar reads:
+
+\begin{Verbatim}[frame=single]
+Newcol Kill Putall Dump Exit
+\end{Verbatim}
+
+These are not buttons---they are editable text.  You can add your own
+commands by typing them into the tag bar.  Middle-click (\button{2}) on
+any word to execute it.
+
+\subsection{Columns}
+\index{columns}
+
+Columns are vertical panes that divide the screen horizontally.  Each
+column has a thin tag bar at its top, typically containing:
+
+\begin{Verbatim}[frame=single]
+New Cut Paste Snarf Sort Zerox Delcol
+\end{Verbatim}
+
+\noindent
+You can:
+
+\begin{itemize}
+\item Create a new column by executing \cmd{Newcol} in the top tag bar.
+\item Delete a column by executing \cmd{Delcol} in the column's tag bar.
+\item Resize columns by dragging the thin border between them with
+      \button{1}.
+\end{itemize}
+
+\subsection{Windows}
+\index{windows}
+
+Each window has two parts:
+
+\paragraph{The tag bar}
+\index{tag bar!window}
+is a single line (or more, if the content wraps) at the top of the
+window.  It contains the window's filename followed by commands.  A
+typical tag bar reads:
+
+\begin{Verbatim}[frame=single]
+/home/user/src/main.c Del Snarf Get Put Undo Redo | Look
+\end{Verbatim}
+
+The filename at the left is editable---you can change it to rename the
+file, or clear it for a scratch buffer.  Everything after the vertical
+bar \texttt{|} is the ``user area'' of the tag, where you can type
+whatever commands you find useful.
+
+\paragraph{The body}
+\index{body}
+occupies the rest of the window and contains the file's text.  This is
+where you read and edit.
+
+\subsection{The Layout Button}
+\index{layout button}
+
+At the far left of each window's tag bar is a small square.  This is
+the \emph{layout button}.  It serves two purposes:
+
+\begin{itemize}
+\item Drag it with \button{1} to move the window within its column or
+      to another column.
+\item Its appearance indicates the window's state:
+  \begin{itemize}
+  \item A clean square means the window matches the file on disk.
+  \item A filled (dirty) square means the window has unsaved changes.
+  \end{itemize}
+\end{itemize}
+
+\subsection{The Scrollbar}
+\index{scrollbar}
+
+Along the left edge of each window body is a narrow scrollbar.  It
+shows a small rectangle (the ``thumb'') indicating which portion of the
+file is currently visible.  See Section~\ref{sec:scrollbar} for details
+on mouse interaction with the scrollbar.
+
+\section{Text Everywhere}
+
+The key insight of acme's interface is that \emph{everything is text}.
+The tag bars are text.  The body is text.  Commands are text.  You
+interact with all of it the same way: by clicking on it with the mouse.
+
+This means:
+
+\begin{itemize}
+\item You can type a command anywhere---in a tag, in a body, even in
+      the middle of a file---and middle-click it to execute.
+\item You can type a filename in any window and right-click it to open
+      that file.
+\item Output from commands appears as text in windows, which you can
+      then edit, search, or use as input to other commands.
+\end{itemize}
+
+There is no distinction between ``code,'' ``output,'' and ``interface.''
+It is all text, and it is all interactive.
+
+\section{Window Management}
+
+\index{window management}
+
+Windows in acme are not managed by tabs or a file tree.  Instead:
+
+\begin{itemize}
+\item Open a file by right-clicking (\button{3}) its name.
+\item Create an empty window with the \cmd{New} command.
+\item Close a window with the \cmd{Del} command.
+\item Clone a window with the \cmd{Zerox} command.
+\item Sort windows alphabetically with the \cmd{Sort} command.
+\item Move windows by dragging the layout button.
+\end{itemize}
+
+To navigate between windows, you simply click in the one you want.
+There is no ``active window'' highlight or focus indicator---you click
+where you want to work, and that window responds.
+
+\section{Directory Windows}
+\index{directory windows}
+
+Right-clicking a directory path opens a window listing the directory's
+contents.  Each entry in the listing is itself clickable: right-click a
+filename to open it, right-click a subdirectory to list it.
+
+Directory windows update automatically when files change.  They serve
+the role of a file browser, but they are just text in a window---you
+can search them, select from them, or pipe their contents through
+commands.
+
+\section{The +Errors Window}
+\index{+Errors window}
+\index{errors}
+
+When an external command writes to standard error, the output appears in
+a window named \file{+Errors} (prefixed with the directory path).
+These windows are created automatically as needed.  You can close them
+with \cmd{Del} like any other window.
+
+Compiler errors often appear in the format \file{file.c:27: error...}.
+Right-clicking (\button{3}) on such a line opens \file{file.c} at
+line~27---a simple but powerful way to navigate error output.

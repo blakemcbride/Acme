@@ -1,0 +1,284 @@
+\chapter{The Mouse}
+\label{ch:mouse}
+
+\index{mouse}
+
+This is the most important chapter in this book.  Acme is a
+mouse-driven editor.  The three mouse buttons are the primary way you
+interact with acme---more so than the keyboard.  If you learn nothing
+else, learn the three buttons and the chords.
+
+Throughout this chapter, the buttons are:
+
+\begin{description}
+\item[\button{1}] Left button --- \textbf{Select}
+\item[\button{2}] Middle button --- \textbf{Execute}
+\item[\button{3}] Right button --- \textbf{Look / Open}
+\end{description}
+
+\section{Button 1: Select}
+\label{sec:b1}
+
+\index{mouse!Button 1}
+\index{selection}
+
+\button{1} is for selecting text.
+
+\begin{description}[style=nextline]
+\item[Click]
+Places the cursor (an empty selection) at the click position.
+
+\item[Drag]
+Selects a range of text.  The selected text is highlighted.
+
+\item[Double-click]
+Selects the word under the cursor.  A ``word'' is a run of
+alphanumeric characters and underscores, or a run of
+non-whitespace characters, depending on context.
+
+\item[Double-click on a bracket]
+If you double-click on any of \texttt{( ) [ ] \{ \} < >}, acme
+selects the text enclosed by the matching pair, including nested
+brackets.  This works for parentheses, square brackets, curly
+braces, and angle brackets.
+
+\item[Double-click on a quote]
+Double-clicking on a single quote, double quote, or backtick
+selects the text enclosed by the matching quote character.
+\end{description}
+
+Clicking \button{1} anywhere deselects the previous selection.  The
+selection is fundamental to acme: many commands operate on the selected
+text, and the selected text is what gets cut, copied, or replaced.
+
+\section{Button 2: Execute}
+\label{sec:b2}
+
+\index{mouse!Button 2}
+\index{executing commands}
+
+\button{2} executes text as a command.
+
+\begin{description}[style=nextline]
+\item[Click on a built-in command]
+Middle-click on \cmd{Put} and acme saves the file.  Middle-click on
+\cmd{Del} and acme closes the window.  Middle-click on \cmd{Undo}
+and acme undoes the last change.
+
+\item[Click on arbitrary text]
+Middle-click on any text to run it as a shell command.  For example,
+type \cmd{date} in a tag bar, middle-click it, and the current date
+appears in the \file{+Errors} window.
+
+\item[Click on a blank area]
+If you click in an empty area or on whitespace, acme expands the
+selection to the surrounding non-whitespace text and executes that.
+This means you do not need to carefully select a command word---just
+click anywhere on it.
+
+\item[Click on a pipe command]
+Text beginning with \texttt{<}, \texttt{>}, or \texttt{|} has special
+meaning.  See Chapter~\ref{ch:shell} for details.
+\end{description}
+
+The command executes in the directory associated with the window.  For a
+file \file{/home/user/src/main.c}, commands run in
+\file{/home/user/src/}.
+
+\section{Button 3: Look and Open}
+\label{sec:b3}
+
+\index{mouse!Button 3}
+\index{Look}
+\index{plumbing}
+
+\button{3} is the ``smart open'' button.  It examines the text you
+click on and does the most useful thing:
+
+\begin{description}[style=nextline]
+\item[Filename]
+Right-click on \file{main.c} and acme opens it in a new window (or
+jumps to the existing window if it is already open).
+
+\item[Filename with address]
+Right-click on \file{main.c:42} and acme opens \file{main.c} and
+jumps to line~42.  The address can be a line number, a line:column
+pair (\file{main.c:42.10}), or a regular expression
+(\file{main.c:/pattern/}).
+
+\item[Address in current file]
+Right-click on \texttt{:42} or \texttt{:/pattern/} to jump to that
+location in the current window.
+
+\item[Include file]
+Right-click on \texttt{<stdio.h>} and acme searches include
+directories for \file{stdio.h} and opens it.
+
+\item[URL]
+Right-click on \texttt{https://example.com} and acme opens it in
+your web browser (via \cmd{xdg-open}, \cmd{open}, or
+\cmd{cygstart} depending on platform).
+
+\item[Plain text]
+Right-click on any other text and acme searches forward in the
+current window body for that text---a literal search (not a regex).
+Click again to find the next occurrence.
+\end{description}
+
+The decision-making process is handled by the \emph{plumber} (see
+Chapter~\ref{ch:plumbing}).  The built-in plumbing rules handle
+filenames, URLs, images, and PDFs.  You can add custom rules.
+
+\section{Mouse Chords}
+\label{sec:chords}
+
+\index{mouse!chords}
+\index{chords}
+
+Mouse chords are combinations of buttons pressed in sequence.  They
+provide quick access to cut, paste, and copy without reaching for menu
+commands.
+
+\subsection{Cut: \chord{1}{2}}
+\index{Cut!chord}
+
+\begin{enumerate}
+\item Press and hold \button{1}, drag to select text.
+\item While still holding \button{1}, click \button{2}.
+\item Release both buttons.
+\end{enumerate}
+
+The selected text is deleted and placed in the snarf buffer (clipboard).
+This is identical to executing the \cmd{Cut} command.
+
+\subsection{Paste: \chord{1}{3}}
+\index{Paste!chord}
+
+\begin{enumerate}
+\item Press and hold \button{1} to position the cursor or select text.
+\item While still holding \button{1}, click \button{3}.
+\item Release both buttons.
+\end{enumerate}
+
+The snarf buffer contents replace the selection (or are inserted at the
+cursor position).  This is identical to executing the \cmd{Paste}
+command.
+
+\subsection{Snarf: \chord{1}{2} then \button{3}}
+\index{Snarf!chord}
+
+\begin{enumerate}
+\item Press and hold \button{1}, drag to select text.
+\item While holding \button{1}, click \button{2} (this cuts).
+\item While still holding \button{1}, click \button{3} (this pastes
+      back what was just cut).
+\item Release all buttons.
+\end{enumerate}
+
+The net effect: the text remains unchanged, but it has been copied to
+the snarf buffer.  This is the chord for ``copy without deleting.''
+
+\subsection{The 2-1 Argument Chord}
+\index{2-1 chord}
+
+Commands can receive an argument via a two-button chord:
+
+\begin{enumerate}
+\item Press and hold \button{2} on a command word (e.g., \cmd{Look}).
+\item While holding \button{2}, click \button{1} on the argument text.
+\item Release both buttons.
+\end{enumerate}
+
+Acme passes the \button{1}-selected text as an argument to the
+\button{2} command.  For example, holding \button{2} on \cmd{Look}
+and clicking \button{1} on a word searches for that word.
+
+\section{The Scrollbar}
+\label{sec:scrollbar}
+
+\index{scrollbar}
+
+The scrollbar is the narrow strip along the left edge of each window
+body.  It contains a thumb (small rectangle) showing the current
+viewport position relative to the whole file.
+
+\begin{description}[style=nextline]
+\item[\button{1} in scrollbar]
+Scrolls \textbf{up}.  The line at the click position moves to the
+top of the window.
+
+\item[\button{2} in scrollbar]
+\textbf{Jump scroll}.  The display jumps so that the thumb is at the
+click position---proportional scrolling.
+
+\item[\button{3} in scrollbar]
+Scrolls \textbf{down}.  The line at the top of the window moves to
+the click position.
+\end{description}
+
+The \cmd{-r} command-line flag reverses the sense of \button{1} and
+\button{3} in the scrollbar, for users who prefer the opposite
+convention.
+
+\section{Scroll Wheel}
+\label{sec:scrollwheel}
+
+\index{scroll wheel}
+
+The scroll wheel scrolls the window body:
+
+\begin{itemize}
+\item Scroll up = scroll text up (view earlier content).
+\item Scroll down = scroll text down (view later content).
+\end{itemize}
+
+The scroll amount is a fraction of the visible window height.
+
+\section{One-Button and Two-Button Mice}
+\label{sec:emulation}
+
+\index{mouse!emulation}
+\index{Ctrl-click}
+\index{Alt-click}
+
+On laptops, trackpads, and Mac mice, you may not have three distinct
+buttons.  Acme provides modifier-click emulation:
+
+\begin{longtable}{@{}ll@{}}
+\toprule
+Modifier Click & Equivalent \\
+\midrule
+\endhead
+\key{Ctrl}-click & \button{2} (execute) \\
+\key{Alt}-click (or \key{Option}-click on Mac) & \button{3} (look/open) \\
+\bottomrule
+\end{longtable}
+
+These modifiers work with \button{1} (left click).  So on a trackpad:
+
+\begin{itemize}
+\item Plain click = \button{1} (select)
+\item \key{Ctrl}+click = \button{2} (execute)
+\item \key{Alt}+click = \button{3} (look/open)
+\end{itemize}
+
+\textbf{Recommendation:} For serious use, get a three-button mouse.
+Acme was designed for one, and the experience is dramatically better
+with real buttons.  Any inexpensive USB mouse with a clickable scroll
+wheel provides three buttons.
+
+\section{Summary}
+
+\begin{longtable}{@{}llp{2.5in}@{}}
+\toprule
+Button & Name & Action \\
+\midrule
+\endhead
+\button{1} & Select & Select text, position cursor, drag to move windows \\
+\button{2} & Execute & Run built-in commands or shell commands \\
+\button{3} & Look & Open files, search text, follow addresses \\
+\chord{1}{2} & Cut & Delete selection to snarf buffer \\
+\chord{1}{3} & Paste & Replace selection with snarf buffer \\
+\chord{1}{2}+\button{3} & Snarf & Copy selection to snarf buffer \\
+\bottomrule
+\end{longtable}

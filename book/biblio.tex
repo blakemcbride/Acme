@@ -1,0 +1,65 @@
+\chapter*{Bibliography}
+\addcontentsline{toc}{chapter}{Bibliography}
+\label{ch:biblio}
+
+\begin{description}[style=nextline,leftmargin=0pt,labelindent=0pt]
+
+\item[Pike, Rob. ``Acme: A User Interface for Programmers.'']
+Proceedings of the Winter 1994 USENIX Conference, San Francisco, 1994.\\
+\url{https://research.swtch.com/acme.pdf}\\
+The foundational paper describing acme's design, philosophy, and
+interface.  Essential reading for understanding why acme works the way
+it does.
+
+\item[Pike, Rob. ``The Text Editor sam.'']
+\emph{Software---Practice and Experience}, Vol.~17, No.~11,
+pp.~813--845, November 1987.\\
+\url{https://doc.cat-v.org/plan_9/4th_edition/papers/sam/}\\
+The full paper on sam's design and command language, which acme's
+\cmd{Edit} command implements.
+
+\item[Pike, Rob. ``Structural Regular Expressions.'']
+Proceedings of the EUUG Spring 1987 Conference, Helsinki, 1987.\\
+\url{https://doc.cat-v.org/bell_labs/structural_regexps/}\\
+Describes the theoretical foundation for sam's \texttt{x} and \texttt{y}
+commands---applying regular expressions to structure rather than lines.
+
+\item[Cox, Russ. ``A Tour of Acme'' (screencast).]
+\url{https://research.swtch.com/acme}\\
+\url{https://www.youtube.com/watch?v=dP1xVpMPn8M}\\
+A video demonstration of day-to-day acme use by one of its primary
+maintainers.  The best introduction for new users.
+
+\item[acme(1) manual page.]
+\url{https://9fans.github.io/plan9port/man/man1/acme.html}\\
+The official manual page from plan9port.
+
+\item[sam(1) manual page.]
+\url{https://9fans.github.io/plan9port/man/man1/sam.html}\\
+Reference for the sam command language used by acme's \cmd{Edit}
+command.
+
+\item[Pike, Rob. ``Plumbing and Other Utilities.'']
+\url{https://doc.cat-v.org/plan_9/4th_edition/papers/plumb/}\\
+Design and implementation of the plumber, Plan~9's inter-application
+message routing system.
+
+\item[Pike, Rob. ``A Minimalist Global User Interface.'']
+\url{https://doc.cat-v.org/plan_9/4th_edition/papers/rio/}\\
+Describes rio, Plan~9's window system, which shares acme's philosophy of
+text and files as the universal interface.
+
+\item[Plan 9 from User Space (plan9port).]
+\url{https://github.com/9fans/plan9port}\\
+The port of Plan~9 user-space tools to Unix, from which this standalone
+acme is derived.
+
+\item[Plan 9 Fourth Edition Papers.]
+\url{https://doc.cat-v.org/plan_9/4th_edition/papers/}\\
+The complete collection of Plan~9 documentation.
+
+\item[Acme community resources.]
+\url{https://acme.cat-v.org/}\\
+Community-maintained collection of acme tips, scripts, and links.
+
+\end{description}

@@ -1,0 +1,149 @@
+\documentclass[11pt,openany,twoside]{memoir}
+
+% 6x9 trim size
+\usepackage[paperwidth=6in,paperheight=9in,
+            inner=0.75in,outer=0.625in,
+            top=0.75in,bottom=0.75in]{geometry}
+
+% Fonts (XeLaTeX)
+\usepackage{fontspec}
+\setmainfont{TeX Gyre Pagella}
+\setsansfont{TeX Gyre Heros}
+\setmonofont[Scale=0.85]{DejaVu Sans Mono}
+
+% Packages
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{makeidx}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{fancyvrb}
+\usepackage{titlesec}
+
+% Colors
+\definecolor{acmeyellow}{RGB}{234,255,198}
+\definecolor{acmeblue}{RGB}{234,234,255}
+\definecolor{codeblue}{RGB}{0,0,128}
+\definecolor{codegray}{RGB}{96,96,96}
+
+% Listings setup
+\lstset{
+  basicstyle=\small\ttfamily,
+  keywordstyle=\color{codeblue}\bfseries,
+  commentstyle=\color{codegray}\itshape,
+  breaklines=true,
+  frame=single,
+  framerule=0.4pt,
+  xleftmargin=1em,
+  xrightmargin=0.5em,
+  aboveskip=0.8em,
+  belowskip=0.8em,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+}
+
+% Hyperref setup
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=codeblue,
+  citecolor=black,
+  bookmarksdepth=3,
+  pdfauthor={},
+  pdftitle={The Acme Editor: A Comprehensive Guide},
+}
+
+% Index
+\makeindex
+
+% Chapter and section styling
+\chapterstyle{veelo}
+\setsecnumdepth{subsection}
+
+% Custom commands
+\newcommand{\button}[1]{\textsf{B#1}}
+\newcommand{\key}[1]{\textsf{#1}}
+\renewcommand{\cmd}[1]{\texttt{#1}}
+\newcommand{\menu}[1]{\textsf{#1}}
+\newcommand{\file}[1]{\texttt{#1}}
+\newcommand{\env}[1]{\texttt{\$#1}}
+\newcommand{\chord}[2]{\textsf{B#1--B#2}}
+
+% Margin notes for tips
+\newcommand{\tip}[1]{\marginpar{\footnotesize\raggedright\itshape #1}}
+
+% Running headers
+\makepagestyle{acmestyle}
+\makeevenhead{acmestyle}{\thepage}{}{\leftmark}
+\makeoddhead{acmestyle}{\rightmark}{}{\thepage}
+\makeevenfoot{acmestyle}{}{}{}
+\makeoddfoot{acmestyle}{}{}{}
+\pagestyle{acmestyle}
+
+\begin{document}
+\frontmatter
+
+% ---- Title Page ----
+\thispagestyle{empty}
+\vspace*{2in}
+\begin{center}
+{\Huge\bfseries The Acme Editor}\\[0.5em]
+{\Large A Comprehensive Guide}\\[2em]
+{\large Based on the standalone acme derived from Plan~9}\\[4em]
+\end{center}
+\vfill
+\newpage
+
+% ---- Copyright (verso of title page) ----
+\thispagestyle{empty}
+\vspace*{\fill}
+\noindent
+The acme editor was created by Rob Pike at Bell Labs as part of
+the Plan~9 operating system.  The standalone version documented here
+is derived from plan9port (Plan~9 from User Space) by Russ Cox.\\[1em]
+\noindent
+Acme source code: MIT License.\\
+Copyright \textcopyright\ 2021 Plan~9 Foundation.\\
+Portions copyright \textcopyright\ 2001--2008 Russ Cox.\\
+Portions copyright \textcopyright\ 2008--2009 Google Inc.\\[2em]
+\newpage
+
+% ---- Table of Contents ----
+\tableofcontents
+\newpage
+
+% ---- Chapters ----
+\mainmatter
+\include{ch01-intro}
+\include{ch02-install}
+\include{ch03-screen}
+\include{ch04-mouse}
+\include{ch05-keyboard}
+\include{ch06-commands}
+\include{ch07-shell}
+\include{ch08-edit}
+\include{ch09-plumbing}
+\include{ch10-workflows}
+\include{ch11-customize}
+
+% ---- Appendices ----
+\appendix
+\include{appA-cmdref}
+\include{appB-editref}
+\include{appC-mouseref}
+\include{appD-kbdref}
+\include{appE-unicode}
+\include{appF-plumbing}
+
+% ---- Back Matter ----
+\backmatter
+\include{biblio}
+
+\printindex
+
+\end{document}

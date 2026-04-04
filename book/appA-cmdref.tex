@@ -1,0 +1,81 @@
+\chapter{Command Reference}
+\label{app:cmdref}
+
+\index{command reference}
+
+All built-in commands, listed alphabetically.  Commands are executed by
+middle-clicking (\button{2}) on the command name.
+
+\begin{longtable}{@{}lp{3.6in}@{}}
+\toprule
+Command & Description \\
+\midrule
+\endhead
+\cmd{Abort} &
+  Debug command.  First execution prints a warning; second calls
+  \texttt{abort()} to generate a core dump. \\
+\cmd{Cut} &
+  Delete selected text and copy to snarf buffer.  Marks window
+  dirty. \\
+\cmd{Del} &
+  Close window.  Warns if dirty; execute again to force. \\
+\cmd{Delcol} &
+  Delete column and all its windows.  Warns if any are dirty. \\
+\cmd{Delete} &
+  Close window without dirty check. \\
+\cmd{Dump} \textit{[file]} &
+  Save session state.  Default: \file{\$HOME/acme.dump}. \\
+\cmd{Edit} \textit{cmd} &
+  Execute sam editing command on window body.  See
+  Chapter~\ref{ch:edit}. \\
+\cmd{Exit} &
+  Quit acme.  Warns if any window is dirty; execute again to
+  force. \\
+\cmd{Font} \textit{[name]} &
+  Toggle proportional/fixed font, or set font by name. \\
+\cmd{Get} \textit{[file]} &
+  Reload file from disk.  With argument, load named file. \\
+\cmd{ID} &
+  Print window ID number. \\
+\cmd{Incl} \textit{[dirs...]} &
+  List or add supplementary include directories for
+  \texttt{<file.h>} resolution. \\
+\cmd{Indent} \textit{[on|off|ON|OFF]} &
+  Set auto-indent.  Lowercase: current window.  Uppercase: all
+  windows. \\
+\cmd{Kill} \textit{[names...]} &
+  Send kill signal to named running commands. \\
+\cmd{Load} \textit{[file]} &
+  Restore session state.  Default: \file{\$HOME/acme.dump}. \\
+\cmd{Look} \textit{[text]} &
+  Literal text search in window body.  Uses selection or argument. \\
+\cmd{New} \textit{[files...]} &
+  Create new window.  With arguments, open named files. \\
+\cmd{Newcol} &
+  Create a new column. \\
+\cmd{Paste} &
+  Replace selection with snarf buffer contents. \\
+\cmd{Put} \textit{[file]} &
+  Write window to disk.  With argument, write to named file. \\
+\cmd{Putall} &
+  Write all dirty windows whose names are real files. \\
+\cmd{Redo} &
+  Redo last undone change. \\
+\cmd{Send} &
+  In Win windows: send pending input to shell.  In regular windows:
+  append snarf buffer to body. \\
+\cmd{Snarf} &
+  Copy selected text to snarf buffer without deleting. \\
+\cmd{Sort} &
+  Sort windows in column alphabetically by name. \\
+\cmd{Tab} \textit{[n]} &
+  Print or set tab width for current window. \\
+\cmd{Undo} &
+  Undo last change or change group. \\
+\cmd{Win} &
+  Open interactive shell session in new window.  See
+  Section~\ref{sec:win}. \\
+\cmd{Zerox} &
+  Clone window (second view of same file). \\
+\bottomrule
+\end{longtable}

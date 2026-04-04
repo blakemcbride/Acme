@@ -1,0 +1,213 @@
+\chapter{Installation}
+\label{ch:install}
+
+\index{installation}
+
+Acme builds from source on Linux, macOS, and Windows.  The build
+produces a single binary, \file{bin/acme}, with no runtime
+configuration files required.
+
+\section{Linux}
+\label{sec:install-linux}
+
+\index{installation!Linux}
+
+\subsection{Prerequisites}
+
+You need a C compiler (GCC or Clang), GNU make, and the development
+libraries for SDL3, FreeType, fontconfig, and zlib.
+
+\paragraph{Debian / Ubuntu:}
+\begin{lstlisting}[language=bash]
+sudo apt install gcc make
+sudo apt install libsdl3-dev libfontconfig1-dev \
+                 libfreetype-dev zlib1g-dev
+\end{lstlisting}
+
+\paragraph{Fedora:}
+\begin{lstlisting}[language=bash]
+sudo dnf install gcc make
+sudo dnf install SDL3-devel fontconfig-devel \
+                 freetype-devel zlib-devel
+\end{lstlisting}
+
+\paragraph{Arch Linux:}
+\begin{lstlisting}[language=bash]
+sudo pacman -S gcc make sdl3 fontconfig freetype2 zlib
+\end{lstlisting}
+
+Note: SDL3 is relatively new.  If your distribution does not yet
+package it, you may need to build SDL3 from source or use a PPA.
+
+\subsection{Building}
+
+\begin{lstlisting}[language=bash]
+git clone <repository-url> acme
+cd acme
+make
+\end{lstlisting}
+
+The build compiles 18 static libraries and the acme binary.  The result
+is \file{bin/acme}.
+
+\subsection{Running}
+
+\begin{lstlisting}[language=bash]
+./bin/acme
+\end{lstlisting}
+
+You can pass files to open on the command line:
+
+\begin{lstlisting}[language=bash]
+./bin/acme main.c util.c README.md
+\end{lstlisting}
+
+To install system-wide, copy the binary:
+
+\begin{lstlisting}[language=bash]
+sudo cp bin/acme /usr/local/bin/
+\end{lstlisting}
+
+\section{macOS}
+\label{sec:install-macos}
+
+\index{installation!macOS}
+
+\subsection{Prerequisites}
+
+Install Xcode Command Line Tools and Homebrew packages:
+
+\begin{lstlisting}[language=bash]
+xcode-select --install
+brew install sdl3 fontconfig freetype pkg-config
+\end{lstlisting}
+
+\subsection{Building and Running}
+
+\begin{lstlisting}[language=bash]
+make
+./bin/acme
+\end{lstlisting}
+
+The build uses \cmd{pkg-config} to locate Homebrew libraries.  If
+\cmd{pkg-config} is not available, it falls back to default Homebrew
+paths (\file{/opt/homebrew} on Apple Silicon, \file{/usr/local} on
+Intel Macs).
+
+\subsection{Mouse on macOS}
+
+\index{mouse!macOS}
+Most Mac users do not have a three-button mouse.  Acme provides
+modifier-click emulation:
+
+\begin{itemize}
+\item \key{Ctrl}-click = \button{2} (middle button / execute)
+\item \key{Alt/Option}-click = \button{3} (right button / look)
+\end{itemize}
+
+A standard USB or Bluetooth three-button mouse is strongly recommended
+for extended use.  See Chapter~\ref{ch:mouse} for details.
+
+\section{Windows}
+\label{sec:install-windows}
+
+\index{installation!Windows}
+
+Acme on Windows uses MSYS2, which provides the POSIX compatibility
+layer needed for fork, exec, pipes, and PTY support.
+
+\subsection{Prerequisites}
+
+\begin{enumerate}
+\item Install MSYS2 from \url{https://www.msys2.org/}.
+\item Open the \textbf{MSYS2 MSYS} shell (not MINGW64 or UCRT64).
+\item Install dependencies:
+\end{enumerate}
+
+\begin{lstlisting}[language=bash]
+pacman -Syu
+pacman -S gcc make pkg-config
+pacman -S libSDL3-devel libfontconfig-devel \
+          libfreetype-devel zlib-devel
+\end{lstlisting}
+
+\subsection{Building and Running}
+
+From the MSYS2 MSYS shell:
+
+\begin{lstlisting}[language=bash]
+make
+./bin/acme
+\end{lstlisting}
+
+The binary depends on the MSYS2 runtime (\file{msys-2.0.dll}).  It must
+be run from an MSYS2 environment or with the MSYS2 DLLs in the PATH.
+
+\subsection{Mouse on Windows}
+
+The same modifier-click emulation is available:
+
+\begin{itemize}
+\item \key{Ctrl}-click = \button{2} (middle button)
+\item \key{Alt}-click = \button{3} (right button)
+\end{itemize}
+
+Any standard three-button USB mouse works natively.
+
+\section{Command-Line Options}
+\label{sec:cmdline}
+
+\index{command-line options}
+
+\begin{longtable}{@{}lp{3.5in}@{}}
+\toprule
+Flag & Description \\
+\midrule
+\endhead
+\cmd{-a} & Enable auto-indent for all windows at startup. \\
+\cmd{-c \textit{N}} & Start with \textit{N} columns (default: 2). \\
+\cmd{-f \textit{font}} & Set the proportional (variable-width) font. \\
+\cmd{-F \textit{font}} & Set the fixed-width font. \\
+\cmd{-l \textit{file}} & Load session state from a dump file. \\
+\cmd{-r} & Reverse scrollbar button mapping (Button~1 scrolls down). \\
+\cmd{-W \textit{WxH}} & Set initial window size, e.g., \cmd{-W 1200x800}. \\
+\bottomrule
+\end{longtable}
+
+\noindent
+Fonts are specified as fontconfig names with a size suffix.  The
+default for both \cmd{-f} and \cmd{-F} is
+\file{DejaVuSansMono/13a/font}.
+
+\section{Environment Variables}
+\label{sec:envvars}
+
+\index{environment variables}
+
+\begin{longtable}{@{}lp{3.3in}@{}}
+\toprule
+Variable & Description \\
+\midrule
+\endhead
+\env{HOME} & User home directory.  Used to find \file{\textasciitilde/lib/plumbing}. \\
+\env{acmeshell} & Shell used to run commands.  Defaults to \cmd{sh}. \\
+\env{tabstop} & Default tab width in columns.  Default is 4. \\
+\env{SHELL} & Shell used by the Win command. \\
+\env{NAMESPACE} & Plan~9 namespace directory.  Usually auto-detected. \\
+\bottomrule
+\end{longtable}
+
+\noindent
+When acme runs an external command, it sets several variables in the
+child's environment:
+
+\begin{longtable}{@{}lp{3.3in}@{}}
+\toprule
+Variable & Description \\
+\midrule
+\endhead
+\env{winid} & Numeric ID of the current window. \\
+\env{\%} & Filename of the current window. \\
+\env{samfile} & Same as \env{\%}. \\
+\bottomrule
+\end{longtable}

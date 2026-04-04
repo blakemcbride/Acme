@@ -1,0 +1,203 @@
+\chapter{Shell Commands and Pipes}
+\label{ch:shell}
+
+\index{shell commands}
+\index{pipe commands}
+
+One of acme's most powerful features is its seamless integration with
+external commands.  Any text can be executed as a shell command.  The
+Unix toolkit becomes your extension mechanism.
+
+\section{Running External Commands}
+\label{sec:external}
+
+\index{executing commands!external}
+
+When you middle-click (\button{2}) on text that is not a built-in
+command, acme runs it as a shell command.  The shell used is determined
+by the \env{acmeshell} environment variable, defaulting to \cmd{sh}.
+
+The command runs in the directory associated with the current window.
+For a file \file{/home/user/project/main.c}, commands execute in
+\file{/home/user/project/}.
+
+\subsection{Environment}
+
+Acme sets the following environment variables for child processes:
+
+\begin{itemize}
+\item \env{winid} --- the numeric ID of the window.
+\item \env{\%} --- the filename of the window.
+\item \env{samfile} --- same as \env{\%}.
+\end{itemize}
+
+\subsection{Output}
+
+Standard output and standard error from the command appear in the
+\file{+Errors} window for that directory.  If no \file{+Errors} window
+exists, one is created automatically.
+
+\subsection{Examples}
+
+Type any of these in a tag bar and middle-click to execute:
+
+\begin{lstlisting}[language=bash]
+date                     # show the date
+ls -la                   # list files
+make                     # build the project
+grep -rn TODO *.c        # search for TODOs
+git status               # check version control
+\end{lstlisting}
+
+\section{Pipe Prefixes: <, >, |}
+\label{sec:pipes}
+
+\index{pipe!< prefix}
+\index{pipe!> prefix}
+\index{pipe!| prefix}
+
+Commands prefixed with \texttt{<}, \texttt{>}, or \texttt{|} interact
+with the current selection:
+
+\begin{longtable}{@{}cp{3.5in}@{}}
+\toprule
+Prefix & Behavior \\
+\midrule
+\endhead
+\texttt{<cmd} & Run \texttt{cmd}, \textbf{replace the selection}
+  with its standard output. \\
+\texttt{>cmd} & Run \texttt{cmd}, sending the \textbf{selection as
+  standard input}.  The selection is unchanged. \\
+\texttt{|cmd} & Run \texttt{cmd}, sending the \textbf{selection as
+  standard input} and \textbf{replacing it} with standard output. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Examples}
+
+\paragraph{Replace selection with command output (\texttt{<}):}
+
+\begin{lstlisting}[language=bash]
+<date              # insert the current date
+<seq 1 10          # insert numbers 1 through 10
+<cat /etc/hostname # insert the hostname
+\end{lstlisting}
+
+\paragraph{Send selection to command (\texttt{>}):}
+
+\begin{lstlisting}[language=bash]
+>wc            # count words/lines in selection
+>lp            # print selection
+>xclip         # copy to X clipboard
+>mail user@x   # email the selection
+\end{lstlisting}
+
+\paragraph{Filter selection through command (\texttt{\textbar}):}
+
+\begin{lstlisting}[language=bash]
+|sort             # sort selected lines
+|sort -u          # sort and remove duplicates
+|fmt -w 72        # reflow text to 72 columns
+|tr a-z A-Z       # uppercase the selection
+|awk '{print NR, $0}'  # add line numbers
+|sed 's/old/new/g'     # search and replace
+|column -t        # align columns
+|indent           # reformat C code
+|gofmt            # reformat Go code
+\end{lstlisting}
+
+These pipe commands are the primary way to extend acme.  Instead of
+plugins, you use the standard Unix toolkit.
+
+\section{The +Errors Window}
+\label{sec:errors}
+
+\index{+Errors window}
+
+Command output goes to a window named with the directory path plus
+\file{+Errors}.  For example, commands run from
+\file{/home/user/project/main.c} produce output in
+\file{/home/user/project/+Errors}.
+
+The \file{+Errors} window is an ordinary acme window.  You can:
+
+\begin{itemize}
+\item Search it with \button{3}.
+\item Right-click on error messages like \file{main.c:42: error} to
+      jump directly to the source location.
+\item Close it with \cmd{Del}.
+\item Clear it by selecting all and deleting.
+\end{itemize}
+
+\section{The Win Command}
+\label{sec:win}
+
+\index{Win}
+\index{PTY}
+\index{interactive shell}
+
+The \cmd{Win} command opens an interactive shell session inside an acme
+window.  It creates a pseudo-terminal (PTY) connected to your shell
+(typically bash or whatever \env{SHELL} is set to).
+
+\subsection{How It Works}
+
+\begin{enumerate}
+\item Execute \cmd{Win} (middle-click it in any tag bar).
+\item A new window opens, named after the current directory with a
+      \file{-win} suffix.
+\item Type commands and press \key{Enter} to send them to the shell.
+\item Output from the shell appears in the window body.
+\end{enumerate}
+
+\subsection{Behavior}
+
+The Win window is not a terminal emulator---it is an acme text buffer
+connected to a shell via PTY.  This means:
+
+\begin{itemize}
+\item You can edit text before pressing \key{Enter}.  The shell does not
+      see your keystrokes until you press \key{Enter}.
+\item You can select output text and use it like any other acme text
+      (right-click filenames, middle-click commands, etc.).
+\item ANSI escape sequences are stripped.  Colors and cursor positioning
+      do not work.
+\item The PTY is set to single-column width, so \cmd{ls} and similar
+      commands produce one-entry-per-line output.
+\item Echo is disabled---acme shows what you type, not the terminal.
+\end{itemize}
+
+\subsection{Shell Configuration}
+
+The Win command starts the shell with a minimal environment:
+
+\begin{itemize}
+\item \texttt{TERM=dumb} --- suppresses escape sequences.
+\item \texttt{PS1="\$ "} --- a simple prompt.
+\item \texttt{PROMPT\_COMMAND}, \texttt{COLORTERM}, and
+      \texttt{LS\_COLORS} are unset.
+\end{itemize}
+
+The shell is started with \cmd{--noediting --norc --noprofile -i}
+flags (for bash) to minimize interference.
+
+\subsection{Closing}
+
+Close a Win window with \cmd{Del} like any other window.  The shell
+process receives SIGHUP and terminates.
+
+\section{When to Use What}
+
+\begin{longtable}{@{}lp{3.5in}@{}}
+\toprule
+Need & Approach \\
+\midrule
+\endhead
+Run a one-off command & Type it in the tag, \button{2} click \\
+Transform selected text & Use \texttt{|cmd} \\
+Insert command output & Use \texttt{<cmd} \\
+Send text to a command & Use \texttt{>cmd} \\
+Interactive session & Use \cmd{Win} \\
+Navigate compiler errors & Right-click error lines in \file{+Errors} \\
+\bottomrule
+\end{longtable}

@@ -1,0 +1,235 @@
+\chapter{Customization}
+\label{ch:customize}
+
+\index{customization}
+
+Acme deliberately has very little to configure.  There are no
+configuration files, no themes, no plugin system.  This is by design:
+the power comes from composing external tools, not from configuring the
+editor.  Nevertheless, there are several things you can adjust.
+
+\section{Fonts}
+\label{sec:fonts}
+
+\index{fonts}
+
+Acme maintains two fonts: a proportional (variable-width) font and a
+fixed-width font.  You can set both at startup and switch between them
+per window.
+
+\subsection{Startup Fonts}
+
+\begin{lstlisting}[language=bash]
+acme -f 'DejaVuSans/14a/font' -F 'DejaVuSansMono/14a/font'
+\end{lstlisting}
+
+The font name format is a fontconfig name followed by a size.  The
+\texttt{a} suffix indicates anti-aliased rendering.
+
+\subsection{Per-Window Fonts}
+
+Middle-click \cmd{Font} in any window tag to toggle between the
+proportional and fixed-width font.
+
+To set a specific font for one window, type:
+
+\begin{Verbatim}[frame=single]
+Font /mnt/font/GoMono/13a/font
+\end{Verbatim}
+
+\noindent
+and middle-click the whole thing.
+
+\subsection{Available Fonts}
+
+Acme discovers fonts through fontconfig.  Any TrueType or OpenType font
+installed on your system is available.  To list installed fonts:
+
+\begin{lstlisting}[language=bash]
+fc-list : family | sort -u
+\end{lstlisting}
+
+\section{Tab Width}
+\label{sec:tabwidth}
+
+\index{tab width}
+
+The default tab width is 4 columns.  To change it:
+
+\begin{description}[style=nextline]
+\item[Per window:]
+Middle-click \cmd{Tab 8} (or any number) in the window tag.
+
+\item[At startup:]
+Set the \env{tabstop} environment variable:
+\begin{lstlisting}[language=bash]
+tabstop=8 acme
+\end{lstlisting}
+\end{description}
+
+\section{Auto-Indentation}
+\label{sec:autoindent}
+
+\index{auto-indent}
+
+Auto-indent is off by default.  When enabled, pressing \key{Enter}
+copies the leading whitespace of the current line onto the new line.
+
+\begin{description}[style=nextline]
+\item[At startup:]
+Use the \cmd{-a} flag:
+\begin{lstlisting}[language=bash]
+acme -a
+\end{lstlisting}
+
+\item[Per window:]
+Middle-click \cmd{Indent on} or \cmd{Indent off} in the tag.
+
+\item[Globally:]
+Middle-click \cmd{Indent ON} or \cmd{Indent OFF} (uppercase).
+\end{description}
+
+\section{Plumbing Rules}
+\label{sec:plumbrules}
+
+\index{plumbing!customization}
+
+The most significant customization you can make is writing custom
+plumbing rules.  Create \file{\textasciitilde/lib/plumbing} with your
+rules.  See Chapter~\ref{ch:plumbing} for the full syntax and examples.
+
+Common customizations:
+
+\begin{itemize}
+\item Add rules for your programming language's error format.
+\item Add rules for documentation URLs (e.g., Go import paths,
+      Rust crate docs).
+\item Add rules for your project's ticket system (e.g., clicking
+      ``JIRA-1234'' opens the ticket in a browser).
+\item Change the file opener command.
+\end{itemize}
+
+\section{Shell}
+\label{sec:shellconfig}
+
+\index{shell configuration}
+
+\subsection{Command Shell}
+
+The shell used for executing commands (middle-click on text) is
+controlled by \env{acmeshell}:
+
+\begin{lstlisting}[language=bash]
+acmeshell=bash acme
+\end{lstlisting}
+
+If not set, acme defaults to \cmd{sh}.
+
+\subsection{Win Shell}
+
+The \cmd{Win} command uses \env{SHELL}:
+
+\begin{lstlisting}[language=bash]
+SHELL=/bin/zsh acme
+\end{lstlisting}
+
+\section{Helper Scripts}
+\label{sec:helpers}
+
+\index{helper scripts}
+
+Since acme sets \env{winid} and \env{\%} in the environment of child
+processes, you can write scripts that interact with the current window.
+
+\subsection{Example: Format on Save}
+
+Add to a tag:
+
+\begin{Verbatim}[frame=single]
+Fmt
+\end{Verbatim}
+
+\noindent
+Where \cmd{Fmt} is a script in your PATH:
+
+\begin{lstlisting}[language=bash]
+#!/bin/sh
+# Fmt: format the current file and reload
+case "$%" in
+    *.go) gofmt -w "$%" ;;
+    *.py) black "$%" ;;
+    *.c)  indent -kr "$%" ;;
+    *.rs) rustfmt "$%" ;;
+esac
+\end{lstlisting}
+
+After running \cmd{Fmt}, middle-click \cmd{Get} to reload the
+formatted file.
+
+\subsection{Example: Run Tests for Current File}
+
+\begin{lstlisting}[language=bash]
+#!/bin/sh
+# Test: run tests related to the current file
+case "$%" in
+    *_test.go) go test -run . -v "$(dirname "$%")" ;;
+    *.py)      python -m pytest "$%" -v ;;
+    *.c)       make test ;;
+esac
+\end{lstlisting}
+
+\subsection{Example: Open Documentation}
+
+\begin{lstlisting}[language=bash]
+#!/bin/sh
+# Doc: open documentation for the word argument
+word="$1"
+case "$%" in
+    *.go) xdg-open "https://pkg.go.dev/search?q=$word" ;;
+    *.py) xdg-open "https://docs.python.org/3/search.html?q=$word" ;;
+    *.rs) xdg-open "https://docs.rs/releases/search?query=$word" ;;
+esac
+\end{lstlisting}
+
+\section{Window Size}
+\label{sec:winsize}
+
+\index{window size}
+
+Set the initial window size with the \cmd{-W} flag:
+
+\begin{lstlisting}[language=bash]
+acme -W 1400x900
+\end{lstlisting}
+
+\section{Scrollbar Direction}
+\label{sec:scrolldir}
+
+\index{scrollbar!direction}
+
+The \cmd{-r} flag reverses the scrollbar button mapping.  By default,
+\button{1} in the scrollbar scrolls up and \button{3} scrolls down.
+With \cmd{-r}, this is reversed.
+
+\begin{lstlisting}[language=bash]
+acme -r
+\end{lstlisting}
+
+\section{Startup Script}
+
+A common pattern is to create a shell alias or script that starts acme
+with your preferred settings:
+
+\begin{lstlisting}[language=bash]
+#!/bin/sh
+# ~/bin/a - start acme with my preferences
+export tabstop=4
+export acmeshell=bash
+exec acme -a \
+    -f 'GoRegular/13a/font' \
+    -F 'GoMono/13a/font' \
+    "$@"
+\end{lstlisting}
+
+There is no \file{.acmerc} or configuration file by design.  A shell
+script gives you the same effect with full transparency.

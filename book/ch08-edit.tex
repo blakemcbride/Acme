@@ -1,0 +1,303 @@
+\chapter{The Edit Command}
+\label{ch:edit}
+
+\index{Edit command}
+\index{sam}
+\index{structural regular expressions}
+
+The \cmd{Edit} command gives acme a complete text-processing language,
+inherited from Rob Pike's sam editor.  It is the most powerful feature
+in acme and rewards study, though it is not required for daily use.
+
+To use it, type \cmd{Edit} followed by a sam command in any tag or
+body, and middle-click (\button{2}) the whole thing.  For example:
+
+\begin{Verbatim}[frame=single]
+Edit ,s/old/new/g
+\end{Verbatim}
+
+\noindent
+This replaces all occurrences of ``old'' with ``new'' in the current
+window.
+
+\section{Addresses}
+\label{sec:addresses}
+
+\index{addresses}
+
+An address identifies a substring of the file.  Addresses appear before
+commands to specify what text the command operates on.
+
+\begin{longtable}{@{}lp{3.5in}@{}}
+\toprule
+Address & Meaning \\
+\midrule
+\endhead
+\texttt{.} & Dot: the current selection. \\
+\texttt{0} & The empty string at the beginning of the file. \\
+\texttt{\$} & The empty string at the end of the file. \\
+\texttt{\textit{n}} & Line \textit{n}. \\
+\texttt{\#\textit{n}} & Character position \textit{n} (counting from 0). \\
+\texttt{/\textit{regexp}/} & Next match of \textit{regexp} after dot. \\
+\texttt{?\textit{regexp}?} & Previous match of \textit{regexp} before dot. \\
+\texttt{\textit{a},\textit{b}} & From address \textit{a} to address \textit{b}. \\
+\texttt{\textit{a};\textit{b}} & From \textit{a} to \textit{b}, with dot set to \textit{a}
+  before evaluating \textit{b}. \\
+\texttt{\textit{a}+\textit{b}} & Address \textit{b} evaluated from the end of \textit{a}. \\
+\texttt{\textit{a}-\textit{b}} & Address \textit{b} evaluated from the start of \textit{a},
+  searching backward. \\
+\bottomrule
+\end{longtable}
+
+\paragraph{Examples:}
+
+\begin{itemize}
+\item \texttt{1,5} --- lines 1 through 5.
+\item \texttt{,} --- the entire file (shorthand for \texttt{0,\$}).
+\item \texttt{.+1} --- the line after the current selection.
+\item \texttt{/func/} --- the next occurrence of ``func''.
+\item \texttt{0,/\^{}package/} --- from start of file to the line
+      matching ``package''.
+\end{itemize}
+
+\section{Simple Commands}
+\label{sec:simple}
+
+\begin{longtable}{@{}lp{3.5in}@{}}
+\toprule
+Command & Action \\
+\midrule
+\endhead
+\texttt{a/\textit{text}/} & \textbf{Append}: insert \textit{text}
+  after the addressed text. \\
+\texttt{i/\textit{text}/} & \textbf{Insert}: insert \textit{text}
+  before the addressed text. \\
+\texttt{c/\textit{text}/} & \textbf{Change}: replace the addressed
+  text with \textit{text}. \\
+\texttt{d} & \textbf{Delete}: delete the addressed text. \\
+\texttt{s/\textit{regexp}/\textit{text}/} & \textbf{Substitute}:
+  replace the first match of \textit{regexp} in the addressed text
+  with \textit{text}. \\
+\texttt{s/\textit{regexp}/\textit{text}/g} & Substitute all matches
+  (global flag). \\
+\texttt{m \textit{addr}} & \textbf{Move}: move the addressed text to
+  after \textit{addr}. \\
+\texttt{t \textit{addr}} & \textbf{Copy}: copy the addressed text to
+  after \textit{addr}. \\
+\texttt{p} & \textbf{Print}: display the addressed text (in
+  \file{+Errors}). \\
+\texttt{=} & Print the line number and character offset of the
+  address. \\
+\bottomrule
+\end{longtable}
+
+The delimiter for \texttt{a}, \texttt{i}, \texttt{c}, and \texttt{s}
+can be any character, not just \texttt{/}.  Newlines within the text are
+entered literally (the text continues on the next line, terminated by
+another delimiter).
+
+\paragraph{Examples:}
+
+\begin{Verbatim}[frame=single]
+Edit 1 i/// Copyright 2024\n/
+Edit ,d
+Edit ,s/colour/color/g
+Edit 5 a/\nnew line after line 5\n/
+Edit /ERROR/ p
+\end{Verbatim}
+
+\section{Structural Commands}
+\label{sec:structural}
+
+\index{structural commands}
+
+The structural commands are what make sam's language truly powerful.
+They apply commands to \emph{each match} of a pattern, rather than to
+lines.
+
+\begin{longtable}{@{}lp{3.5in}@{}}
+\toprule
+Command & Action \\
+\midrule
+\endhead
+\texttt{x/\textit{regexp}/\textit{cmd}} & \textbf{Extract}: for each
+  match of \textit{regexp} in the addressed text, set dot to the match
+  and execute \textit{cmd}. \\
+\texttt{y/\textit{regexp}/\textit{cmd}} & \textbf{Complement}: for
+  each piece of text between matches of \textit{regexp}, set dot and
+  execute \textit{cmd}. \\
+\texttt{g/\textit{regexp}/\textit{cmd}} & \textbf{Guard}: execute
+  \textit{cmd} only if the addressed text contains a match of
+  \textit{regexp}. \\
+\texttt{v/\textit{regexp}/\textit{cmd}} & \textbf{Inverse guard}:
+  execute \textit{cmd} only if the addressed text does \emph{not}
+  contain a match of \textit{regexp}. \\
+\bottomrule
+\end{longtable}
+
+The key insight from Pike's ``Structural Regular Expressions'' paper is
+that \texttt{x} replaces the traditional line-oriented approach.
+Instead of ``for each line,'' you say ``for each match.''
+
+\paragraph{Idiom: ``for each line'' is \texttt{x/.*\textbackslash n/}.}
+
+Since \texttt{x} matches arbitrary patterns, it operates on structure
+rather than lines.  You can loop over words, sentences, paragraphs,
+function bodies, or any textual pattern.
+
+\section{Grouping}
+\label{sec:grouping}
+
+\index{grouping commands}
+
+Multiple commands can be grouped with braces:
+
+\begin{Verbatim}[frame=single]
+Edit ,x/.*\n/ {
+    g/TODO/ p
+}
+\end{Verbatim}
+
+\noindent
+This prints every line containing ``TODO''.
+
+\section{Multi-File Commands}
+\label{sec:multifile}
+
+\index{X command}
+\index{Y command}
+
+\begin{longtable}{@{}lp{3.5in}@{}}
+\toprule
+Command & Action \\
+\midrule
+\endhead
+\texttt{X/\textit{regexp}/\textit{cmd}} & For each open file whose
+  name matches \textit{regexp}, execute \textit{cmd}. \\
+\texttt{Y/\textit{regexp}/\textit{cmd}} & For each open file whose
+  name does \emph{not} match \textit{regexp}, execute \textit{cmd}. \\
+\bottomrule
+\end{longtable}
+
+\noindent
+These operate across all open windows, not just the current one.
+
+\paragraph{Example:} Replace ``foo'' with ``bar'' in all open \file{.c}
+files:
+
+\begin{Verbatim}[frame=single]
+Edit X/\.c$/ ,s/foo/bar/g
+\end{Verbatim}
+
+\section{Substitution Details}
+\label{sec:subst}
+
+\index{substitute command}
+
+The substitute command supports backreferences:
+
+\begin{itemize}
+\item \texttt{\textbackslash 1}, \texttt{\textbackslash 2}, \ldots\
+      refer to captured groups in the regexp.
+\item \texttt{\&} refers to the entire match.
+\end{itemize}
+
+\paragraph{Example:} Swap the order of two-word variable names:
+
+\begin{Verbatim}[frame=single]
+Edit ,s/([a-z]+)_([a-z]+)/\2_\1/g
+\end{Verbatim}
+
+\section{Worked Examples}
+\label{sec:examples}
+
+These examples demonstrate common editing tasks using the Edit command.
+
+\subsection{Delete All Blank Lines}
+
+\begin{Verbatim}[frame=single]
+Edit ,x/\n\n+/ c/\n/
+\end{Verbatim}
+
+\noindent
+Translation: in the whole file (\texttt{,}), for each run of two or
+more newlines (\texttt{x/\textbackslash n\textbackslash n+/}), replace
+with a single newline (\texttt{c/\textbackslash n/}).
+
+\subsection{Indent Selected Lines}
+
+\begin{Verbatim}[frame=single]
+Edit x/.*\n/ i/\t/
+\end{Verbatim}
+
+\noindent
+For each line in the selection, insert a tab at the beginning.  (Select
+the lines first, then run this Edit command.)
+
+\subsection{Remove Trailing Whitespace}
+
+\begin{Verbatim}[frame=single]
+Edit ,s/[ \t]+$//g
+\end{Verbatim}
+
+\subsection{Rename a Variable}
+
+\begin{Verbatim}[frame=single]
+Edit ,s/\boldName\b/newName/g
+\end{Verbatim}
+
+\noindent
+The \texttt{\textbackslash b} word boundaries prevent partial matches.
+
+\subsection{Delete Lines Containing ``DEBUG''}
+
+\begin{Verbatim}[frame=single]
+Edit ,x/.*\n/ g/DEBUG/ d
+\end{Verbatim}
+
+\noindent
+For each line, if it contains ``DEBUG'', delete it.
+
+\subsection{Extract Function Signatures from a C File}
+
+\begin{Verbatim}[frame=single]
+Edit ,x/^[a-zA-Z].*\n{/ p
+\end{Verbatim}
+
+\noindent
+Print every line that starts with a letter and ends with \texttt{\{},
+which is a rough match for C function definitions.
+
+\subsection{Number All Lines}
+
+Select the text, then:
+
+\begin{Verbatim}[frame=single]
+Edit |awk '{printf "%4d  %s\n", NR, $0}'
+\end{Verbatim}
+
+\noindent
+Sometimes the easiest ``Edit'' command is a pipe to a Unix tool.
+
+\section{What Is Not Implemented}
+
+Acme implements most of the sam command language, with these exceptions:
+
+\begin{itemize}
+\item \texttt{k} (mark) --- not implemented.
+\item \texttt{n} (print file list) --- not implemented.
+\item \texttt{q} (quit) --- use \cmd{Exit} instead.
+\item \texttt{!} (shell command) --- use acme's native shell execution.
+\end{itemize}
+
+\section{Further Reading}
+
+The Edit command language is fully described in:
+
+\begin{itemize}
+\item Rob Pike, ``The Text Editor sam,'' \emph{Software---Practice and
+      Experience}, Vol.~17, No.~11, November 1987.
+\item Rob Pike, ``Structural Regular Expressions,'' Proc.\ EUUG Spring
+      1987 Conference.
+\item The sam(1) manual page.
+\end{itemize}

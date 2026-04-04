@@ -1,0 +1,126 @@
+\chapter{Introduction}
+\label{ch:intro}
+
+\index{acme!introduction}
+
+Acme is a text editor and programming environment created by Rob Pike
+at Bell Labs in 1993.  It was designed as part of the Plan~9 operating
+system, where it served as both an editor and a shell---a surface on
+which all work takes place.
+
+Acme is unlike any other editor you have used.  It has no menus, no
+toolbars, no configuration files, no plugin system, and no key bindings
+to memorize.  Instead, it offers a blank surface where all commands are
+ordinary text that you execute with a mouse click.  Any text, anywhere
+on screen, can be a command.  Any text can be a filename.  Any text can
+be a search term.  The entire interface is built from three mouse
+buttons and text.
+
+\section{Philosophy}
+
+Rob Pike described acme's design philosophy in his 1994 paper:
+
+\begin{quote}
+The right model is to have a shell that does not distinguish between a
+program that is an editor and a program that is a compiler.  All programs
+should have equal access to the services of the environment.
+\end{quote}
+
+\index{philosophy}
+This leads to several principles:
+
+\begin{description}[style=nextline]
+\item[Text is the universal interface.]
+Commands are text.  Output is text.  Filenames are text.  You interact
+with everything by reading and clicking on text.
+
+\item[The mouse is primary.]
+Acme is designed for a three-button mouse.  The keyboard is for typing
+text; the mouse is for everything else---executing commands, opening
+files, selecting, searching, scrolling, and window management.
+
+\item[Simplicity over features.]
+Acme has no syntax highlighting, no auto-completion, no bracket matching,
+no built-in debugger, no project manager.  It provides a powerful surface
+and lets external programs do the work.
+
+\item[Compose, don't configure.]
+Rather than configuring the editor, you compose it with external tools.
+Need to sort lines?  Select them and execute \cmd{|sort}.  Need to
+reformat?  Execute \cmd{|fmt}.  The Unix toolkit is your extension
+mechanism.
+\end{description}
+
+\section{How Acme Differs}
+
+If you come from \textbf{vi} or \textbf{Vim}, you will notice that acme
+has no modes.  There is no insert mode, no command mode, no visual mode.
+You are always editing.  Commands are not key sequences---they are text
+you click on.
+
+If you come from \textbf{Emacs}, you will notice that there are no key
+bindings to learn beyond basic cursor movement.  There is no Lisp
+configuration, no major modes, no minor modes.  The mouse does what
+key chords do in Emacs.
+
+If you come from \textbf{VS Code} or similar IDEs, you will notice the
+absence of everything: no file tree, no tabs, no status bar, no
+integrated terminal widget.  Instead, every window is a general-purpose
+text buffer.  A directory listing is a window.  A shell session is a
+window.  Compiler output is a window.  They are all the same thing.
+
+The learning curve is not in memorizing commands---there are very few.
+The learning curve is in \emph{changing how you think} about interacting
+with a computer.
+
+\section{History}
+
+\index{Plan 9}
+\index{Pike, Rob}
+\index{Bell Labs}
+Acme was written by Rob Pike at Bell Labs as part of the Plan~9
+operating system.  Plan~9 was the successor to Unix, designed by many
+of the same people.  In Plan~9, all resources---files, network
+connections, processes, graphics---appear as files in a hierarchical
+namespace.  Acme takes full advantage of this: it presents its windows,
+buffers, and events as a file system that other programs can read and
+write.
+
+\index{plan9port}
+\index{Cox, Russ}
+In 2003, Russ Cox ported the Plan~9 user-space tools to Unix systems
+as \emph{plan9port} (Plan~9 from User Space).  This made acme available
+on Linux, macOS, and other Unix systems, though it still depended on
+several Plan~9 support programs (devdraw, fontsrv, plumber, 9pserve).
+
+The standalone version documented in this book goes further: it embeds
+all those support programs directly into a single binary.  It uses SDL3
+for graphics (supporting both X11 and Wayland on Linux, and native
+windows on macOS and Windows), FreeType and fontconfig for fonts, and a
+built-in plumber for opening files and URLs.  The result is a
+single-binary acme with no external dependencies beyond standard system
+libraries.
+
+\section{About This Book}
+
+This book is a comprehensive guide to using acme.  It covers
+installation on Linux, macOS, and Windows; the mouse and keyboard
+interface; all built-in commands; the sam editing language; plumbing;
+and practical workflows.
+
+Chapter~\ref{ch:mouse} (The Mouse) is the most important chapter in
+this book.  If you read only one chapter, read that one.  Acme is a
+mouse-driven editor, and understanding the three buttons and their
+chords is essential.
+
+Chapter~\ref{ch:edit} (The Edit Command) covers the most powerful
+feature---a complete structural editing language inherited from the sam
+editor.  It rewards study but is not required for day-to-day use.
+
+The appendices provide quick-reference tables for commands, mouse
+actions, keyboard shortcuts, and the Unicode composition system.
+
+Throughout this book, mouse buttons are referred to as \button{1}
+(left), \button{2} (middle), and \button{3} (right).  Keyboard
+shortcuts are written as \key{Ctrl+A} (hold Control, press A).
+Built-in commands appear as \cmd{Put}, \cmd{Get}, \cmd{New}, etc.

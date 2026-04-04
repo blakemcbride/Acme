@@ -1,0 +1,265 @@
+\chapter{Built-in Commands}
+\label{ch:commands}
+
+\index{commands}
+
+Acme's built-in commands are capitalized words that you execute by
+middle-clicking (\button{2}) on them.  They typically appear in window
+tag bars but can be typed and executed anywhere.
+
+\section{Clipboard: Cut, Snarf, Paste}
+\label{sec:clipboard}
+
+\index{Cut}
+\index{Snarf}
+\index{Paste}
+\index{snarf buffer}
+\index{clipboard}
+
+Acme maintains an internal buffer called the \emph{snarf buffer}.  This
+is also synchronized with the system clipboard via SDL3, so you can
+copy and paste between acme and other applications.
+
+\begin{description}[style=nextline]
+\item[\cmd{Cut}]
+Delete the selected text and place it in the snarf buffer.  The
+window is marked dirty.
+
+\item[\cmd{Snarf}]
+Copy the selected text to the snarf buffer \emph{without} deleting
+it.  The window is not marked dirty.
+
+\item[\cmd{Paste}]
+Replace the current selection with the contents of the snarf buffer.
+If there is no selection, insert at the cursor position.
+\end{description}
+
+The mouse chords \chord{1}{2} (Cut), \chord{1}{3} (Paste), and
+\chord{1}{2}+\button{3} (Snarf) perform the same operations more
+quickly.  See Section~\ref{sec:chords}.
+
+To paste text from another application into acme: copy in the other
+application (e.g., \key{Ctrl+C}), then execute \cmd{Paste} in acme or
+use the \chord{1}{3} chord.
+
+\section{Undo and Redo}
+\label{sec:undo}
+
+\index{Undo}
+\index{Redo}
+
+\begin{description}[style=nextline]
+\item[\cmd{Undo}]
+Undo the last change or group of changes.  Acme groups related
+changes (e.g., all characters typed before a pause) into a single
+undo step.
+
+\item[\cmd{Redo}]
+Reverse the last \cmd{Undo}.
+\end{description}
+
+Undo operates on a per-file basis.  If the same file is open in
+multiple windows, undoing in one window affects all windows showing that
+file.
+
+\section{File Operations: Get, Put, Putall}
+\label{sec:fileops}
+
+\index{Get}
+\index{Put}
+\index{Putall}
+
+\begin{description}[style=nextline]
+\item[\cmd{Get}]
+Reload the file from disk, replacing the window's contents.  If the
+window has unsaved changes, acme warns you (execute \cmd{Get} a
+second time to override).
+
+With an argument (\cmd{Get \textit{filename}}), load the named file
+into the current window without changing the window's name.
+
+\item[\cmd{Put}]
+Write the window's contents to disk.  Uses the filename shown in the
+tag bar.
+
+With an argument (\cmd{Put \textit{filename}}), write to the named
+file instead (``Save As'').
+
+\item[\cmd{Putall}]
+Write all dirty windows to their respective files.  Only saves
+windows whose names correspond to real files.  Skips scratch
+windows, directory windows, and windows with no filename.
+\end{description}
+
+\section{Window Management}
+\label{sec:winmgmt}
+
+\index{New}
+\index{Del}
+\index{Delete}
+\index{Zerox}
+\index{Newcol}
+\index{Delcol}
+\index{Sort}
+
+\begin{description}[style=nextline]
+\item[\cmd{New}]
+Create a new empty window.  With arguments (\cmd{New
+\textit{file1 file2...}}), open those files in new windows.
+
+\item[\cmd{Del}]
+Close the current window.  If the window has unsaved changes, acme
+warns you.  Execute \cmd{Del} a second time to close anyway.
+
+\item[\cmd{Delete}]
+Close the current window without checking for unsaved changes.
+
+\item[\cmd{Zerox}]
+Clone the current window, creating a second view of the same file.
+Both windows show the same underlying file; changes in one appear in
+the other.
+
+\item[\cmd{Newcol}]
+Create a new column.
+
+\item[\cmd{Delcol}]
+Delete the current column and all its windows.  Warns if any window
+has unsaved changes.
+
+\item[\cmd{Sort}]
+Sort the windows in the current column alphabetically by filename.
+\end{description}
+
+\section{Session Management: Dump, Load, Exit}
+\label{sec:session}
+
+\index{Dump}
+\index{Load}
+\index{Exit}
+
+\begin{description}[style=nextline]
+\item[\cmd{Dump}]
+Save the complete acme session state---window layout, filenames, font
+settings, and positions---to a file.  Default: \file{\$HOME/acme.dump}.
+
+With an argument (\cmd{Dump \textit{filename}}), save to the named
+file.
+
+\item[\cmd{Load}]
+Restore a previously saved session from a dump file.  Default:
+\file{\$HOME/acme.dump}.
+
+\item[\cmd{Exit}]
+Quit acme.  If any window has unsaved changes, acme warns you.
+Execute \cmd{Exit} a second time to quit anyway.
+\end{description}
+
+The \cmd{Dump}/\cmd{Load} pair lets you preserve your workspace
+across sessions.  It is common to dump before quitting and load when
+restarting.
+
+\section{Search: Look}
+\label{sec:look}
+
+\index{Look}
+
+\begin{description}[style=nextline]
+\item[\cmd{Look}]
+Search for text in the window body.  Uses the current selection as
+the search term.  If there is no selection, uses the word nearest
+the cursor.
+
+With an argument (via the 2-1 chord or by typing \cmd{Look
+\textit{text}}), search for that text.
+
+The search is \textbf{literal} (not a regex) and wraps around the
+end of the file.  For regex search, use the \cmd{Edit} command
+(Chapter~\ref{ch:edit}) or right-click on a \texttt{:/regex/}
+address.
+\end{description}
+
+\section{Display: Font, Tab, Indent}
+\label{sec:display}
+
+\index{Font}
+\index{Tab}
+\index{Indent}
+\index{auto-indent}
+
+\begin{description}[style=nextline]
+\item[\cmd{Font}]
+Toggle between proportional and fixed-width fonts.
+
+With an argument (\cmd{Font \textit{fontname}}), set the window's
+font.  Font names are fontconfig names with a size suffix (e.g.,
+\file{DejaVuSans/12a/font}).
+
+\item[\cmd{Tab}]
+With no argument: print the current tab width.
+
+With a numeric argument (\cmd{Tab 8}): set the tab display width for
+the current window.
+
+\item[\cmd{Indent}]
+Control auto-indentation.
+
+\begin{itemize}
+\item \cmd{Indent on} / \cmd{Indent off} --- affect the current window.
+\item \cmd{Indent ON} / \cmd{Indent OFF} --- affect all windows globally.
+\end{itemize}
+\end{description}
+
+\section{Process Control: Kill, ID}
+\label{sec:process}
+
+\index{Kill}
+\index{ID}
+
+\begin{description}[style=nextline]
+\item[\cmd{Kill}]
+Send a kill signal to running commands.  With arguments, kills
+commands whose names match.
+
+\item[\cmd{ID}]
+Print the current window's numeric ID.
+\end{description}
+
+\section{Include Paths: Incl}
+\label{sec:incl}
+
+\index{Incl}
+
+\begin{description}[style=nextline]
+\item[\cmd{Incl}]
+With no arguments: list the current supplementary include directories.
+
+With arguments (\cmd{Incl \textit{/path/to/headers}}): add
+directories to the search path used when right-clicking on
+\texttt{<filename.h>} patterns.
+\end{description}
+
+The default search path includes \file{/usr/include} and
+\file{/usr/local/include}.  The \cmd{Incl} command adds project-specific
+directories.
+
+\section{Send}
+\label{sec:send}
+
+\index{Send}
+
+\begin{description}[style=nextline]
+\item[\cmd{Send}]
+In a Win window (see Chapter~\ref{ch:shell}), send the text between
+the prompt boundary and the end of the body to the shell.
+
+In a regular window, append the snarf buffer contents to the end
+of the body.
+\end{description}
+
+\section{Win}
+\label{sec:win-brief}
+
+\index{Win}
+
+The \cmd{Win} command opens an interactive shell session in an acme
+window.  See Chapter~\ref{ch:shell} for full details.

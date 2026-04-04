@@ -1,0 +1,82 @@
+\chapter{Mouse Reference}
+\label{app:mouseref}
+
+\index{mouse!reference}
+
+\section{Single-Button Actions}
+
+\begin{longtable}{@{}llp{2.5in}@{}}
+\toprule
+Button & Location & Action \\
+\midrule
+\endhead
+\button{1} & Body/Tag & Place cursor or select text. \\
+\button{1} & Scrollbar & Scroll up (line at click moves to top). \\
+\button{1} & Layout button & Drag to move window. \\
+\button{1} double & Body/Tag & Select word. \\
+\button{1} double & On bracket & Select to matching bracket. \\
+\button{1} double & On quote & Select to matching quote. \\
+\button{1} triple & Body/Tag & Select line. \\
+\midrule
+\button{2} & Body/Tag & Execute text as command. \\
+\button{2} & Scrollbar & Jump scroll (proportional). \\
+\midrule
+\button{3} & Body/Tag & Open file, follow address, or search. \\
+\button{3} & Scrollbar & Scroll down (top line moves to click). \\
+\midrule
+Scroll up & Body & Scroll text up. \\
+Scroll down & Body & Scroll text down. \\
+\bottomrule
+\end{longtable}
+
+\section{Chords}
+
+\begin{longtable}{@{}lp{3.5in}@{}}
+\toprule
+Chord & Action \\
+\midrule
+\endhead
+\chord{1}{2} & Cut: delete selection to snarf buffer. \\
+\chord{1}{3} & Paste: replace selection with snarf buffer. \\
+\chord{1}{2}+\button{3} & Snarf: copy selection to snarf buffer (no delete). \\
+\button{2} hold, \button{1} click & 2-1 chord: pass \button{1} text as argument to
+  \button{2} command. \\
+\bottomrule
+\end{longtable}
+
+\section{Modifier-Click Emulation}
+
+For mice with fewer than three buttons:
+
+\begin{longtable}{@{}ll@{}}
+\toprule
+Modifier Click & Equivalent \\
+\midrule
+\endhead
+\key{Ctrl}+\button{1} & \button{2} (execute) \\
+\key{Alt}+\button{1} & \button{3} (look/open) \\
+\bottomrule
+\end{longtable}
+
+\section{Button 3 Decision Table}
+
+What happens when you right-click (\button{3}) on different kinds of
+text:
+
+\begin{longtable}{@{}lp{3.0in}@{}}
+\toprule
+Text & Action \\
+\midrule
+\endhead
+\file{filename} & Open file (or jump to existing window). \\
+\file{filename:N} & Open file at line N. \\
+\file{filename:N.M} & Open file at line N, column M. \\
+\file{filename:N.M,N.M} & Open file at line/column range. \\
+\file{filename:/re/} & Open file, search for regex. \\
+\texttt{:N} & Jump to line N in current file. \\
+\texttt{:/re/} & Search for regex in current file. \\
+\texttt{http://...} & Open URL in browser. \\
+\texttt{<file.h>} & Search include directories. \\
+Other text & Literal search in current body. \\
+\bottomrule
+\end{longtable}

@@ -1,0 +1,187 @@
+\chapter{Plumbing}
+\label{ch:plumbing}
+
+\index{plumbing}
+\index{plumber}
+
+When you right-click (\button{3}) on text in acme, the \emph{plumber}
+decides what to do with it.  Is it a filename?  Open it.  A URL?
+Launch a browser.  A compiler error?  Jump to the source line.  The
+plumber is a pattern-matching system that routes text to the appropriate
+action.
+
+This standalone acme has an embedded plumber---no external daemon or
+configuration is needed.  It comes with sensible defaults and supports
+custom rules.
+
+\section{How Plumbing Works}
+
+When you right-click on text, acme:
+
+\begin{enumerate}
+\item Identifies the text under the click (expands to word/filename
+      boundaries).
+\item Constructs a \emph{plumb message} containing the text, its type,
+      the source directory, and any attributes (like an address).
+\item Matches the message against plumbing rules in order.
+\item The first matching rule determines the action: open in the editor,
+      start an external program, or search.
+\end{enumerate}
+
+\section{Default Rules}
+\label{sec:defaultrules}
+
+\index{plumbing!default rules}
+
+The built-in rules handle common patterns:
+
+\begin{longtable}{@{}lp{3.2in}@{}}
+\toprule
+Pattern & Action \\
+\midrule
+\endhead
+URLs (\texttt{http://}, \texttt{https://}, etc.) &
+  Open in web browser. \\
+Image files (\texttt{.jpg}, \texttt{.png}, \texttt{.gif}, etc.) &
+  Open in image viewer. \\
+Document files (\texttt{.pdf}, \texttt{.ps}, \texttt{.dvi}) &
+  Open in document viewer. \\
+\texttt{file:line.col,line.col} &
+  Open file at line and column range. \\
+\texttt{file:line.col} &
+  Open file at line and column. \\
+\texttt{file:line} or \texttt{file:/regexp/} &
+  Open file at address. \\
+Plain filenames &
+  Open file in acme. \\
+\texttt{<file.h>} style includes &
+  Search \file{/usr/include} and \file{/usr/local/include}. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Platform Differences}
+\index{plumbing!platform}
+
+The command used to open URLs, images, and PDFs varies by platform:
+
+\begin{itemize}
+\item \textbf{Linux:} \cmd{xdg-open}
+\item \textbf{macOS:} \cmd{open}
+\item \textbf{Windows (MSYS2):} \cmd{cygstart}
+\end{itemize}
+
+\section{Custom Rules}
+\label{sec:customrules}
+
+\index{plumbing!custom rules}
+\index{plumbing rules file@\file{\textasciitilde/lib/plumbing}}
+
+To override or extend the default rules, create the file
+\file{\textasciitilde/lib/plumbing}.  If this file exists, it
+\emph{replaces} the built-in defaults entirely.
+
+\subsection{Rule Syntax}
+
+A plumbing rule is a sequence of patterns and actions, separated by
+blank lines.  Each rule consists of:
+
+\begin{lstlisting}[frame=none,basicstyle=\small\ttfamily]
+# Optional comment
+type is text
+data matches '<regexp>'
+arg isfile $1
+plumb to <port>
+plumb start <command> $file
+\end{lstlisting}
+
+\paragraph{Pattern lines} test properties of the plumb message:
+
+\begin{longtable}{@{}lp{3.2in}@{}}
+\toprule
+Pattern & Meaning \\
+\midrule
+\endhead
+\texttt{type is text} & The message type is ``text''. \\
+\texttt{data matches '\textit{re}'} & The message data matches the regex.
+  Capturing groups set \texttt{\$1}, \texttt{\$2}, etc. \\
+\texttt{data set \$file} & Set the data to the matched file path. \\
+\texttt{arg isfile \$\textit{n}} & Check that the captured group is an
+  existing file path.  Sets \texttt{\$file} if so. \\
+\texttt{attr add addr=\$\textit{n}} & Add an attribute (e.g., a line
+  number address). \\
+\bottomrule
+\end{longtable}
+
+\paragraph{Action lines} specify what to do:
+
+\begin{longtable}{@{}lp{3.2in}@{}}
+\toprule
+Action & Meaning \\
+\midrule
+\endhead
+\texttt{plumb to edit} & Open in acme editor. \\
+\texttt{plumb to web} & Open as a URL. \\
+\texttt{plumb to image} & Open as an image. \\
+\texttt{plumb client \$editor} & Open in the acme editor (for ``edit''
+  port). \\
+\texttt{plumb start \textit{cmd} \$file} & Run an external command. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Variables}
+
+\begin{longtable}{@{}lp{3.5in}@{}}
+\toprule
+Variable & Meaning \\
+\midrule
+\endhead
+\texttt{\$0} & The entire matched data. \\
+\texttt{\$1}, \texttt{\$2}, \ldots & Captured groups from \texttt{data matches}. \\
+\texttt{\$file} & The resolved file path (set by \texttt{arg isfile}). \\
+\texttt{\$editor} & The editor variable (set at top of rules). \\
+\bottomrule
+\end{longtable}
+
+\subsection{Example Custom Rules}
+
+\paragraph{Open Go import paths:}
+\begin{lstlisting}[frame=none,basicstyle=\small\ttfamily]
+# Go import paths -> go doc
+type is text
+data matches '[a-zA-Z0-9./\-]+'
+data matches '([a-z]+\.[a-z]+/[a-zA-Z0-9./\-]+)'
+plumb to web
+plumb start xdg-open https://pkg.go.dev/$1
+\end{lstlisting}
+
+\paragraph{Open Python files with line numbers from tracebacks:}
+\begin{lstlisting}[frame=none,basicstyle=\small\ttfamily]
+type is text
+data matches 'File "([^"]+)", line ([0-9]+)'
+arg isfile $1
+data set $file
+attr add addr=$2
+plumb to edit
+plumb client $editor
+\end{lstlisting}
+
+\paragraph{Open man pages:}
+\begin{lstlisting}[frame=none,basicstyle=\small\ttfamily]
+type is text
+data matches '([a-zA-Z0-9_\-]+)\(([0-9])\)'
+plumb to none
+plumb start xterm -e man $2 $1
+\end{lstlisting}
+
+\section{Debugging Plumbing}
+
+If right-clicking does not produce the expected result:
+
+\begin{enumerate}
+\item Check \file{\textasciitilde/lib/plumbing} for syntax errors.
+\item Remember that custom rules \emph{replace} the defaults---include
+      the standard rules in your file if you want to keep them.
+\item Rules are matched in order; the first match wins.
+\item File existence checks (\texttt{arg isfile}) use the source
+      window's directory for relative paths.
+\end{enumerate}

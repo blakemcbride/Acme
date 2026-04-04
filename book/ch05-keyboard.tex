@@ -1,0 +1,208 @@
+\chapter{Keyboard}
+\label{ch:keyboard}
+
+\index{keyboard}
+
+While the mouse is acme's primary interaction tool, the keyboard
+handles text entry, cursor movement, and a small set of editing
+shortcuts.  This standalone version of acme remaps the cursor keys,
+Home, End, and Page keys to work in a standard, familiar way.
+
+\section{Cursor Movement}
+\label{sec:cursor}
+
+\index{cursor movement}
+
+\begin{longtable}{@{}lp{3.2in}@{}}
+\toprule
+Key & Action \\
+\midrule
+\endhead
+\key{Left Arrow} & Move cursor one character left. \\
+\key{Right Arrow} & Move cursor one character right. \\
+\key{Up Arrow} & Move cursor up one line. \\
+\key{Down Arrow} & Move cursor down one line. \\
+\key{Ctrl+Left} & Move to beginning of line (same as \key{Ctrl+A}). \\
+\key{Ctrl+Right} & Move to end of line (same as \key{Ctrl+E}). \\
+\key{Ctrl+A} & Move to beginning of line. \\
+\key{Ctrl+E} & Move to end of line. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Sticky Column}
+\index{sticky column}
+
+The up and down arrow keys maintain a \emph{sticky column} position.
+When you press \key{Up} or \key{Down}, acme remembers the horizontal
+pixel position of the cursor and tries to place it at the same
+horizontal position on the adjacent line.  If the adjacent line is
+shorter, the cursor goes to the end of that line, but the original
+column is remembered.  When you reach a longer line again, the cursor
+returns to the remembered column.
+
+The sticky column resets whenever you press any key other than \key{Up}
+or \key{Down}, or when you click the mouse.
+
+\subsection{Scrolling with Arrow Keys}
+\index{scrolling!arrow keys}
+
+If the cursor is on the \emph{last visible line} and you press
+\key{Down}, acme scrolls down one line and places the cursor on the new
+last visible line.  Similarly, pressing \key{Up} on the first visible
+line scrolls up one line.  This gives smooth, continuous scrolling while
+navigating with arrow keys.
+
+\section{Page Navigation}
+\label{sec:paging}
+
+\index{scrolling!page}
+
+\begin{longtable}{@{}lp{3.2in}@{}}
+\toprule
+Key & Action \\
+\midrule
+\endhead
+\key{Page Up} & Scroll up one full screen. \\
+\key{Page Down} & Scroll down one full screen. \\
+\key{Ctrl+Up} & Scroll up one full screen (same as Page~Up). \\
+\key{Ctrl+Down} & Scroll down one full screen (same as Page~Down). \\
+\bottomrule
+\end{longtable}
+
+\key{Page Down} does nothing if the end of the file is already visible.
+
+\section{Jump to Position}
+\label{sec:jump}
+
+\index{Home key}
+\index{End key}
+
+\begin{longtable}{@{}lp{3.2in}@{}}
+\toprule
+Key & Action \\
+\midrule
+\endhead
+\key{Home} & Move cursor to first character visible on screen. \\
+\key{End} & Move cursor to beginning of last visible line. \\
+\key{Ctrl+Home} & Jump to beginning of file. \\
+\key{Ctrl+End} & Jump to end of file. \\
+\key{Ctrl+Page Up} & Jump to beginning of file (same as \key{Ctrl+Home}). \\
+\key{Ctrl+Page Down} & Jump to end of file (same as \key{Ctrl+End}). \\
+\bottomrule
+\end{longtable}
+
+\key{Home} and \key{End} do \emph{not} scroll the text---they move the
+cursor within the currently visible portion.  \key{Ctrl+Home},
+\key{Ctrl+End}, \key{Ctrl+Page Up}, and \key{Ctrl+Page Down} scroll
+as needed to show the target position.
+
+\section{Editing Keys}
+\label{sec:editkeys}
+
+\index{Backspace}
+\index{Delete key}
+
+\begin{longtable}{@{}lp{3.2in}@{}}
+\toprule
+Key & Action \\
+\midrule
+\endhead
+\key{Backspace} & Delete the character to the left of the cursor. \\
+\key{Delete} & Delete the character to the right of the cursor. \\
+\key{Ctrl+H} & Delete character left (same as \key{Backspace}). \\
+\key{Ctrl+W} & Delete word to the left of the cursor. \\
+\key{Ctrl+U} & Delete from cursor to beginning of line. \\
+\bottomrule
+\end{longtable}
+
+\key{Backspace} deletes the character to the left, which is the
+standard behavior on modern systems.  \key{Delete} (forward delete)
+removes the character to the right.
+
+\section{Text Entry}
+
+\index{auto-indent}
+\index{Tab key}
+
+Typing inserts text at the cursor position, replacing any selection.
+This is standard behavior---there are no modes.
+
+\paragraph{Auto-indent.}
+When auto-indent is enabled (via the \cmd{-a} flag or the \cmd{Indent}
+command), pressing \key{Enter} inserts a newline followed by the same
+leading whitespace as the previous line.
+
+\paragraph{Tab.}
+The \key{Tab} key inserts a literal tab character.  The display width of
+a tab is controlled by the \cmd{Tab} command or the \env{tabstop}
+environment variable (default: 4 columns).
+
+\section{Unicode Composition}
+\label{sec:compose}
+
+\index{Unicode composition}
+\index{Alt key}
+
+Acme supports entering Unicode characters through a multi-key
+composition system.  To compose a character:
+
+\begin{enumerate}
+\item Press and release the \key{Alt} key (this toggles composition mode).
+\item Type the composition sequence (one or more characters).
+\item The composed character is inserted.
+\end{enumerate}
+
+If the sequence is unrecognized, the literal characters are inserted.
+Press \key{Alt} again to cancel composition mode.
+
+\subsection{Common Compositions}
+
+\begin{longtable}{@{}llll@{}}
+\toprule
+Sequence & Result & & Description \\
+\midrule
+\endhead
+\texttt{'e} & \'{e} & & Acute accent \\
+\texttt{`e} & \`{e} & & Grave accent \\
+\texttt{\^{}e} & \^{e} & & Circumflex \\
+\texttt{"e} & \"{e} & & Diaeresis / umlaut \\
+\texttt{\~{}n} & \~{n} & & Tilde \\
+\texttt{,c} & \c{c} & & Cedilla \\
+\texttt{oe} & \oe & & Ligature \\
+\texttt{*a} & $\alpha$ & & Greek alpha \\
+\texttt{*b} & $\beta$ & & Greek beta \\
+\texttt{*p} & $\pi$ & & Greek pi \\
+\texttt{!=} & $\neq$ & & Not equal \\
+\texttt{<=} & $\leq$ & & Less or equal \\
+\texttt{>=} & $\geq$ & & Greater or equal \\
+\texttt{+-} & $\pm$ & & Plus-minus \\
+\texttt{->} & $\rightarrow$ & & Right arrow \\
+\texttt{<-} & $\leftarrow$ & & Left arrow \\
+\texttt{sr} & $\sqrt{}$ & & Square root \\
+\texttt{if} & $\infty$ & & Infinity \\
+\bottomrule
+\end{longtable}
+
+\noindent
+The full composition table contains over 500 entries, covering Latin
+accented characters, Greek, Cyrillic, mathematical symbols, currency
+symbols, arrows, and more.  See Appendix~\ref{app:unicode} for the
+complete table.
+
+\section{Summary}
+
+\begin{longtable}{@{}llp{2.5in}@{}}
+\toprule
+Category & Keys & Notes \\
+\midrule
+\endhead
+Movement & Arrows, \key{Ctrl}+Arrows & Sticky column on up/down \\
+Pages & \key{PgUp}, \key{PgDn}, \key{Ctrl}+Up/Dn & Full-screen scroll \\
+Jump & \key{Home}, \key{End} & Within visible area \\
+File jump & \key{Ctrl+Home}, \key{Ctrl+End} & Beginning / end of file \\
+Delete & \key{Backspace}, \key{Delete} & Left / right of cursor \\
+Words & \key{Ctrl+W} & Delete word left \\
+Lines & \key{Ctrl+U}, \key{Ctrl+A}, \key{Ctrl+E} & Delete/move to line boundary \\
+Compose & \key{Alt}, then sequence & Unicode character entry \\
+\bottomrule
+\end{longtable}

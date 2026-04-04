@@ -1,0 +1,236 @@
+\chapter{Practical Workflows}
+\label{ch:workflows}
+
+\index{workflows}
+
+This chapter demonstrates how to use acme for common programming tasks.
+The goal is not to prescribe a workflow but to show how acme's simple
+tools compose into effective patterns.
+
+\section{Editing Code}
+\label{sec:coding}
+
+\subsection{Opening a Project}
+
+Start acme with the files you want to edit:
+
+\begin{lstlisting}[language=bash]
+acme src/*.c include/*.h Makefile
+\end{lstlisting}
+
+Or start acme empty and right-click (\button{3}) on directory names to
+browse, then right-click on filenames to open them.
+
+\subsection{Navigating}
+
+\begin{itemize}
+\item Right-click on a function name to search for it in the current
+      file.
+\item Right-click on \file{header.h} to open it.
+\item Right-click on \texttt{:42} to jump to line 42.
+\item Right-click on \texttt{:/pattern/} to search by regex.
+\item Use \cmd{Look} with a 2-1 chord to search for specific text.
+\end{itemize}
+
+\subsection{Multiple Columns}
+
+Use two or three columns to keep related files visible:
+
+\begin{itemize}
+\item Left column: header files and interfaces.
+\item Middle column: implementation files you are editing.
+\item Right column: \file{+Errors}, \cmd{Win} shell, or test output.
+\end{itemize}
+
+Create columns with \cmd{Newcol}.  Move windows between columns by
+dragging the layout button.
+
+\section{Building and Testing}
+\label{sec:building}
+
+\subsection{Running Make}
+
+Type \cmd{make} in any tag bar and middle-click it.  Output appears in
+\file{+Errors}.
+
+If the build fails with errors like:
+
+\begin{Verbatim}[frame=single]
+main.c:42: error: undeclared identifier 'x'
+\end{Verbatim}
+
+\noindent
+right-click on that line to jump directly to \file{main.c} line~42.
+Fix the error, then middle-click \cmd{make} again.
+
+\subsection{Running Tests}
+
+\begin{lstlisting}[language=bash]
+make test
+go test ./...
+python -m pytest
+cargo test
+\end{lstlisting}
+
+Any of these can be typed in a tag and executed.  Test output with
+file:line references is clickable.
+
+\subsection{Continuous Workflow}
+
+A typical edit-build-fix cycle:
+
+\begin{enumerate}
+\item Edit code in a window.
+\item Middle-click \cmd{Put} to save.
+\item Middle-click \cmd{make} in the tag.
+\item Right-click error lines to navigate to problems.
+\item Fix and repeat.
+\end{enumerate}
+
+For even faster iteration, open a \cmd{Win} window and run build
+commands interactively.
+
+\section{Version Control}
+\label{sec:vcs}
+
+\index{version control}
+\index{git}
+
+\subsection{Checking Status}
+
+Type in any tag and middle-click:
+
+\begin{lstlisting}[language=bash]
+git status
+git diff
+git log --oneline -20
+\end{lstlisting}
+
+\subsection{Committing}
+
+\begin{lstlisting}[language=bash]
+git add -p
+git commit
+\end{lstlisting}
+
+For interactive commands like \cmd{git add -p} or \cmd{git commit}
+(which opens an editor), use a \cmd{Win} window.
+
+\subsection{Viewing Diffs}
+
+Run \cmd{git diff} and the output appears in \file{+Errors}.
+Right-click on filenames in the diff headers to open those files.
+
+\section{Writing Prose}
+\label{sec:prose}
+
+\subsection{Proportional Fonts}
+
+Switch to a proportional font for more comfortable reading:
+
+\begin{enumerate}
+\item Middle-click \cmd{Font} in the tag to toggle between fixed and
+      proportional.
+\item Or specify a font: \cmd{Font /mnt/font/DejaVuSerif/14a/font}
+\end{enumerate}
+
+\subsection{Reflowing Text}
+
+Select a paragraph and execute:
+
+\begin{lstlisting}[language=bash]
+|fmt -w 72
+\end{lstlisting}
+
+This reflows the text to 72 columns, suitable for email or plain-text
+documents.
+
+\subsection{Spell Checking}
+
+Select text and run:
+
+\begin{lstlisting}[language=bash]
+>aspell list
+\end{lstlisting}
+
+This sends the selection to \cmd{aspell} and shows misspelled words in
+\file{+Errors}.
+
+\section{Multi-File Search and Replace}
+\label{sec:multifile}
+
+\subsection{Using Edit X}
+
+To replace ``oldFunc'' with ``newFunc'' in all open \file{.c} files:
+
+\begin{Verbatim}[frame=single]
+Edit X/\.c$/ ,s/oldFunc/newFunc/g
+\end{Verbatim}
+
+\subsection{Using Grep}
+
+Run \cmd{grep -rn pattern *.c} from a tag.  The output lines are
+clickable:
+
+\begin{Verbatim}[frame=single]
+src/main.c:42:    oldFunc(x, y);
+src/util.c:17:    oldFunc(a, b);
+\end{Verbatim}
+
+Right-click each line to jump to the match, make the change, and move
+to the next.
+
+\section{Session Management}
+\label{sec:sessions}
+
+\index{session management}
+\index{Dump}
+\index{Load}
+
+\subsection{Saving Your Workspace}
+
+Before quitting, middle-click \cmd{Dump} in the top tag.  This saves
+the complete state---all windows, their positions, fonts, and column
+layout---to \file{\$HOME/acme.dump}.
+
+\subsection{Restoring}
+
+Next time you start acme:
+
+\begin{lstlisting}[language=bash]
+acme -l $HOME/acme.dump
+\end{lstlisting}
+
+Or start acme normally and middle-click \cmd{Load} in the top tag.
+
+\subsection{Multiple Sessions}
+
+Save different sessions to different files:
+
+\begin{Verbatim}[frame=single]
+Dump project-a.dump
+Dump project-b.dump
+\end{Verbatim}
+
+\noindent
+Then load the appropriate one:
+
+\begin{Verbatim}[frame=single]
+Load project-a.dump
+\end{Verbatim}
+
+\section{Tips}
+
+\begin{itemize}
+\item Add frequently-used commands to the top tag bar.  For example,
+      type \cmd{make} or \cmd{git diff} there so it is always one
+      click away.
+\item Use directory windows as a file browser---right-click a directory
+      path to list it.
+\item Right-clicking on a word in \file{+Errors} output searches for
+      it, which is useful for tracing error messages.
+\item The \cmd{Zerox} command creates a second view of a file, handy for
+      looking at one part while editing another.
+\item \cmd{Sort} in a column tag alphabetizes windows, making it easy
+      to find files.
+\end{itemize}
