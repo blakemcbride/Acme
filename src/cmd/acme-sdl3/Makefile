@@ -9,13 +9,54 @@
 
 # PLAN9 root (two levels up from src/cmd/acme-sdl3)
 PLAN9 ?= $(realpath ../../..)
+UNAME_S := $(shell uname -s)
 
-CC = gcc
+CC ?= cc
+
+# GCC-only warning flags (clang does not support these)
+GCC_WARN_FLAGS = \
+	-Wno-array-parameter \
+	-Wno-stringop-truncation \
+	-Wno-stringop-overflow \
+	-Wno-format-truncation \
+	-Wno-unused-but-set-variable
+
+ifeq ($(UNAME_S),Darwin)
+FREETYPE_CFLAGS := $(shell pkg-config --cflags freetype2 2>/dev/null || echo "-I/opt/homebrew/include/freetype2 -I/opt/homebrew/include")
+FREETYPE_LDFLAGS := $(shell pkg-config --libs freetype2 2>/dev/null || echo "-L/opt/homebrew/lib -lfreetype")
+SDL3_CFLAGS := $(shell pkg-config --cflags sdl3 2>/dev/null)
+SDL3_LDFLAGS := $(shell pkg-config --libs sdl3 2>/dev/null || echo "-lSDL3")
+FONTCONFIG_CFLAGS := $(shell pkg-config --cflags fontconfig 2>/dev/null)
+FONTCONFIG_LDFLAGS := $(shell pkg-config --libs fontconfig 2>/dev/null || echo "-lfontconfig")
+PLATFORM_WARN_FLAGS =
+PLATFORM_LDFLAGS = -lm -lpthread -framework CoreFoundation
+else ifneq (,$(findstring NT,$(UNAME_S)))
+FREETYPE_CFLAGS := $(shell pkg-config --cflags freetype2 2>/dev/null)
+FREETYPE_LDFLAGS := $(shell pkg-config --libs freetype2 2>/dev/null || echo "-lfreetype")
+SDL3_CFLAGS := $(shell pkg-config --cflags sdl3 2>/dev/null)
+SDL3_LDFLAGS := $(shell pkg-config --libs sdl3 2>/dev/null || echo "-lSDL3")
+FONTCONFIG_CFLAGS := $(shell pkg-config --cflags fontconfig 2>/dev/null)
+FONTCONFIG_LDFLAGS := $(shell pkg-config --libs fontconfig 2>/dev/null || echo "-lfontconfig")
+PLATFORM_WARN_FLAGS = $(GCC_WARN_FLAGS)
+PLATFORM_LDFLAGS = -lm -lpthread -lws2_32
+else
+FREETYPE_CFLAGS = -I/usr/include/freetype2
+FREETYPE_LDFLAGS = -lfreetype
+SDL3_CFLAGS =
+SDL3_LDFLAGS = -lSDL3
+FONTCONFIG_CFLAGS =
+FONTCONFIG_LDFLAGS = -lfontconfig
+PLATFORM_WARN_FLAGS = $(GCC_WARN_FLAGS)
+PLATFORM_LDFLAGS = -lm -lutil -lresolv -lpthread
+endif
+
 CFLAGS = -O2 -c \
 	-I$(PLAN9)/include \
-	-I/usr/include/freetype2 \
+	$(FREETYPE_CFLAGS) \
+	$(SDL3_CFLAGS) \
+	$(FONTCONFIG_CFLAGS) \
 	-Wall \
-	-Wno-array-parameter \
+	$(PLATFORM_WARN_FLAGS) \
 	-Wno-parentheses \
 	-Wno-missing-braces \
 	-Wno-switch \
@@ -23,10 +64,6 @@ CFLAGS = -O2 -c \
 	-Wno-sign-compare \
 	-Wno-unknown-pragmas \
 	-Wno-misleading-indentation \
-	-Wno-stringop-truncation \
-	-Wno-stringop-overflow \
-	-Wno-format-truncation \
-	-Wno-unused-but-set-variable \
 	-Wno-deprecated-declarations \
 	-fno-omit-frame-pointer \
 	-fsigned-char \
@@ -35,11 +72,11 @@ CFLAGS = -O2 -c \
 	-ggdb
 
 LDFLAGS = -L$(PLAN9)/lib \
-	-lSDL3 -lfontconfig -lfreetype -lz \
+	$(SDL3_LDFLAGS) $(FONTCONFIG_LDFLAGS) $(FREETYPE_LDFLAGS) -lz \
 	-lsec -lauth -lauthsrv -lmemdraw -lndb -lplumb \
 	-lmemlayer -lframe -ldraw -l9pclient -lip -lmp -lmux \
 	-lthread -lregexp9 -lcomplete -lbio -l9 -lthread -l9 -lsec -l9 \
-	-lm -lutil -lresolv -lpthread
+	$(PLATFORM_LDFLAGS)
 
 TARGET = $(PLAN9)/bin/acme
 

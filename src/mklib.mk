@@ -3,14 +3,27 @@
 # then includes this file.
 
 PLAN9 ?= $(realpath ../..)
-CC = gcc
+UNAME_S := $(shell uname -s)
+CC ?= cc
 AR = ar
 ARFLAGS = rcs
+
+# GCC-only warning flags (clang does not support these)
+GCC_WARN_FLAGS = \
+	-Wno-array-parameter \
+	-Wno-stringop-truncation \
+	-Wno-stringop-overflow \
+	-Wno-format-truncation \
+	-Wno-unused-but-set-variable
+
+ifneq ($(UNAME_S),Darwin)
+PLATFORM_WARN_FLAGS = $(GCC_WARN_FLAGS)
+endif
 
 CFLAGS = -O2 -c \
 	-I$(PLAN9)/include \
 	-Wall \
-	-Wno-array-parameter \
+	$(PLATFORM_WARN_FLAGS) \
 	-Wno-parentheses \
 	-Wno-missing-braces \
 	-Wno-switch \
@@ -18,10 +31,6 @@ CFLAGS = -O2 -c \
 	-Wno-sign-compare \
 	-Wno-unknown-pragmas \
 	-Wno-misleading-indentation \
-	-Wno-stringop-truncation \
-	-Wno-stringop-overflow \
-	-Wno-format-truncation \
-	-Wno-unused-but-set-variable \
 	-Wno-deprecated-declarations \
 	-fno-omit-frame-pointer \
 	-fsigned-char \

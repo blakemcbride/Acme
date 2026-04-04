@@ -330,9 +330,11 @@ winexec(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
 		setenv("PS1", "$ ", 1);
 
 		shell = getenv("SHELL");
-		if(shell == nil)
+		if(shell == nil || shell[0] == 0)
 			shell = "/bin/bash";
+		/* Try bash with minimal startup; fall back to plain interactive */
 		execl(shell, shell, "--noediting", "--norc", "--noprofile", "-i", nil);
+		execl(shell, shell, "-i", nil);
 		execl("/bin/sh", "sh", "-i", nil);
 		_exit(1);
 	}

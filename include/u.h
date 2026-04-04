@@ -117,6 +117,12 @@ typedef long p9jmp_buf[sizeof(sigjmp_buf)/(sizeof(long))];
 #	undef _NEEDUSHORT
 #	undef _NEEDUINT
 #	undef _NEEDULONG
+#elif defined(__CYGWIN__) || defined(__MSYS__)
+#	include <sys/types.h>
+#	include <pthread.h>
+#	undef _NEEDUSHORT
+#	undef _NEEDUINT
+#	undef _NEEDULONG
 #else
 	/* No idea what system this is -- try some defaults */
 #	include <pthread.h>

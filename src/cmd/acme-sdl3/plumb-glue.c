@@ -114,8 +114,17 @@ plumb_estrdup(char *s)
 /*
  * Built-in plumbing rules, used when ~/lib/plumbing doesn't exist.
  * This is fileaddr + basic inlined, with Plan 9 tools replaced by
- * standard Linux equivalents (xdg-open).
+ * standard platform equivalents (xdg-open on Linux, open on macOS).
  */
+
+#if defined(__APPLE__)
+#define PLUMB_OPENER "open"
+#elif defined(__CYGWIN__) || defined(__MSYS__)
+#define PLUMB_OPENER "cygstart"
+#else
+#define PLUMB_OPENER "xdg-open"
+#endif
+
 static char defaultrules[] =
 	"# address patterns\n"
 	"addrelem='((#?[0-9]+)|(/[A-Za-z0-9_\\^]+/?)|[.$])'\n"
@@ -128,7 +137,7 @@ static char defaultrules[] =
 	"type is text\n"
 	"data matches '(https?|ftp|file|gopher|mailto|news|nntp|telnet|wais|prospero)://[a-zA-Z0-9_@\\-]+([.:][a-zA-Z0-9_@\\-]+)*/?[a-zA-Z0-9_?,%#~&/\\-+=]+([:.][a-zA-Z0-9_?,%#~&/\\-+=]+)*'\n"
 	"plumb to web\n"
-	"plumb start xdg-open $0\n"
+	"plumb start " PLUMB_OPENER " $0\n"
 	"\n"
 	"# image files\n"
 	"type is text\n"
@@ -136,7 +145,7 @@ static char defaultrules[] =
 	"data matches '([a-zA-Z\302-\357\240-\277\200-\2770-9_\\-./@]+)\\.(jpe?g|JPE?G|gif|GIF|tiff?|TIFF?|ppm|bit|png|PNG)'\n"
 	"arg isfile	$0\n"
 	"plumb to image\n"
-	"plumb start xdg-open $file\n"
+	"plumb start " PLUMB_OPENER " $file\n"
 	"\n"
 	"# pdf/ps/dvi files\n"
 	"type is text\n"
@@ -144,7 +153,7 @@ static char defaultrules[] =
 	"data matches '([a-zA-Z\302-\357\240-\277\200-\2770-9_\\-./@]+)\\.(ps|PS|eps|EPS|pdf|PDF|dvi|DVI)'\n"
 	"arg isfile	$0\n"
 	"plumb to postscript\n"
-	"plumb start xdg-open $file\n"
+	"plumb start " PLUMB_OPENER " $file\n"
 	"\n"
 	"# existing files tagged by line:col twice, go to editor\n"
 	"type is text\n"

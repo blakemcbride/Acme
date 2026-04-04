@@ -29,8 +29,13 @@ nsfromdisplay(void)
 	char *disp, *p;
 
 	if((disp = getenv("DISPLAY")) == nil){
-#ifdef __APPLE__
-		// Might be running native GUI on OS X.
+#if defined(__APPLE__)
+		/* Might be running native GUI on OS X. */
+		disp = strdup(":0.0");
+		if(disp == nil)
+			return nil;
+#elif defined(__CYGWIN__) || defined(__MSYS__)
+		/* MSYS2/Windows: no X11 display, use a fixed name. */
 		disp = strdup(":0.0");
 		if(disp == nil)
 			return nil;
