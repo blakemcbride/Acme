@@ -72,7 +72,12 @@ The changes, in rough order:
    original 9P filesystem.  Select text, type `|sort`, and
    middle-click it to sort the selection in place.
 
-10. **Conventional keyboard navigation** — Arrow keys, Home, End, Page
+10. **Comprehensive user manual** — A full-length book in the `book/`
+    directory, written in LaTeX for 6"x9" print format.  Covers all
+    aspects of acme from basic mouse operations to the sam editing
+    language, plumbing, and customization.
+
+11. **Conventional keyboard navigation** — Arrow keys, Home, End, Page
     Up, Page Down, and Delete work as expected in a modern editor.  Up
     and down arrows move the cursor one line at a time with sticky
     column tracking.  Ctrl+arrow combinations provide additional
@@ -139,6 +144,13 @@ Acme's interface is unusual.  Here are the essentials:
 The `docs/` directory contains detailed documentation including Rob
 Pike's original paper, the Plan 9 manual pages, keyboard and mouse
 shortcut references, and a video tour.
+
+The `book/` directory contains a comprehensive user manual in LaTeX
+(6"x9" trim size).  Build it with `make` in that directory (requires
+XeLaTeX and makeindex).  It covers installation, the mouse-driven
+interface, keyboard navigation, built-in commands, shell integration,
+the Edit command (sam language), plumbing, practical workflows, and
+customization.
 
 For a full introduction, see Russ Cox's
 [tour of Acme](http://acme.cat-v.org/).
