@@ -84,6 +84,10 @@ The changes, in rough order:
     navigation (beginning/end of line, page scroll, jump to start/end
     of file).  See `KeyBoard.md` for the full reference.
 
+12. **Tilde expansion in file paths** — File paths beginning with `~/`
+    are expanded to the user's home directory.  Type `~/src/foo.c` in
+    a tag and `Get` or right-click it to open the file.
+
 ## Building
 
 ### Prerequisites

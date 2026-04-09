@@ -505,6 +505,27 @@ getname(Text *t, Text *argt, Rune *arg, int narg, int isput)
 		n = narg;
 		if(n <= 0){
 			s = runetobyte(t->file->name, t->file->nname);
+			if(s != nil && s[0] == '~' && (s[1] == '/' || s[1] == '\0') && home != nil){
+				char *ns;
+				ns = smprint("%s%s", home, s+1);
+				free(s);
+				s = ns;
+			}
+			return s;
+		}
+		/* expand ~/... to $HOME/... */
+		if(n>0 && arg[0]=='~' && (n==1 || arg[1]=='/') && home!=nil){
+			Rune *hr, *expanded;
+			int hn;
+			hr = bytetorune(home, &hn);
+			expanded = runemalloc(hn+n);
+			runemove(expanded, hr, hn);
+			runemove(expanded+hn, arg+1, n-1);
+			free(hr);
+			r = expanded;
+			n = hn+n-1;
+			s = runetobyte(r, n);
+			free(r);
 			return s;
 		}
 		/* prefix with directory name if necessary */
@@ -536,6 +557,13 @@ getname(Text *t, Text *argt, Rune *arg, int narg, int isput)
 	if(strlen(s) == 0){
 		free(s);
 		s = nil;
+	}
+	/* expand ~/... to $HOME/... */
+	if(s != nil && s[0] == '~' && (s[1] == '/' || s[1] == '\0') && home != nil){
+		char *ns;
+		ns = smprint("%s%s", home, s+1);
+		free(s);
+		s = ns;
 	}
 	return s;
 }
