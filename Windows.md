@@ -14,7 +14,7 @@ layer (fork, exec, pipes, PTY) that the codebase depends on.
 
 ```
 pacman -Syu
-pacman -S gcc make pkg-config
+pacman -S git gcc make pkg-config
 pacman -S libSDL3-devel
 pacman -S libfontconfig-devel
 pacman -S libfreetype-devel
