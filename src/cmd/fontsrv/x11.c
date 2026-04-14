@@ -1,8 +1,13 @@
 #include <u.h>
 
 #include <fontconfig/fontconfig.h>
+
+#if defined(__CYGWIN__) || defined(__MSYS__)
+#include "ft-shim.h"
+#else
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#endif
 
 #include <libc.h>
 #include <draw.h>
@@ -10,22 +15,59 @@
 #include "a.h"
 
 static FcConfig    *fc;
-static FT_Library  lib;
 static int         dpi = 96;
+
+#if defined(__CYGWIN__) || defined(__MSYS__)
+static FTShimLibrary lib;
+#else
+static FT_Library  lib;
+#endif
 
 void
 loadfonts(void)
 {
 	int i;
-	FT_Error e;
+	int e;
 	FcFontSet *sysfonts;
 
+#if defined(_WIN32)
+	/*
+	 * Load embedded fontconfig config programmatically so we don't
+	 * need a fonts.conf file on disk next to the binary.
+	 */
+	{
+		static const FcChar8 embedded_conf[] =
+			"<?xml version=\"1.0\"?>\n"
+			"<!DOCTYPE fontconfig SYSTEM \"urn:fontconfig:fonts.dtd\">\n"
+			"<fontconfig>\n"
+			"  <dir>C:\\Windows\\Fonts</dir>\n"
+			"  <dir>WINDOWSFONTDIR</dir>\n"
+			"  <cachedir>LOCAL_APPDATA_FONTCONFIG_CACHE</cachedir>\n"
+			"  <match target=\"pattern\">\n"
+			"    <test qual=\"any\" name=\"family\"><string>mono</string></test>\n"
+			"    <edit name=\"family\" mode=\"assign\" binding=\"same\"><string>Consolas</string></edit>\n"
+			"  </match>\n"
+			"</fontconfig>\n";
+		fc = FcConfigCreate();
+		if(fc == NULL || !FcConfigParseAndLoadFromMemory(fc, embedded_conf, FcTrue)
+		  || !FcConfigBuildFonts(fc)){
+			fprint(2, "fontconfig initialization failed\n");
+			exits("fontconfig failed");
+		}
+		FcConfigSetCurrent(fc);
+	}
+#else
 	if(!FcInit() || (fc=FcInitLoadConfigAndFonts()) == NULL) {
 		fprint(2, "fontconfig initialization failed\n");
 		exits("fontconfig failed");
 	}
+#endif
 
+#if defined(__CYGWIN__) || defined(__MSYS__)
+	e = ftshim_init(&lib);
+#else
 	e = FT_Init_FreeType(&lib);
+#endif
 	if(e) {
 		fprint(2, "freetype initialization failed: %d\n", e);
 		exits("freetype failed");
@@ -57,11 +99,46 @@ loadfonts(void)
 void
 load(XFont *f)
 {
-	FT_Face face;
-	FT_Error e;
-	FT_ULong charcode;
-	FT_UInt glyph_index;
+	int e;
 	int i;
+
+#if defined(__CYGWIN__) || defined(__MSYS__)
+	FTShimFace face;
+	unsigned int charcode, glyph_index;
+
+	if(f->loaded)
+		return;
+
+	e = ftshim_new_face(lib, f->fontfile, f->index, &face);
+	if(e){
+		fprint(2, "load failed for %s (%s) index:%d\n", f->name, f->fontfile, f->index);
+		return;
+	}
+	if(!ftshim_is_scalable(face)) {
+		fprint(2, "%s is a non scalable font, skipping\n", f->name);
+		ftshim_done_face(face);
+		f->loaded = 1;
+		return;
+	}
+	f->unit = ftshim_units_per_em(face);
+	f->height = (int)((ftshim_ascender(face) - ftshim_descender(face)) * 1.35);
+	f->originy = ftshim_descender(face) * 1.35;
+	for(charcode=ftshim_get_first_char(face, &glyph_index); glyph_index != 0;
+		charcode=ftshim_get_next_char(face, charcode, &glyph_index)) {
+
+		int idx = charcode/SubfontSize;
+
+		if(charcode > Runemax)
+			break;
+
+		if(!f->range[idx])
+			f->range[idx] = 1;
+	}
+	ftshim_done_face(face);
+#else
+	FT_Face face;
+	FT_ULong ft_charcode;
+	FT_UInt ft_glyph_index;
 
 	if(f->loaded)
 		return;
@@ -79,26 +156,25 @@ load(XFont *f)
 	}
 	f->unit = face->units_per_EM;
 	f->height = (int)((face->ascender - face->descender) * 1.35);
-	f->originy = face->descender * 1.35; // bbox.yMin (or descender)  is negative, because the baseline is y-coord 0
+	f->originy = face->descender * 1.35;
 
-	for(charcode=FT_Get_First_Char(face, &glyph_index); glyph_index != 0;
-		charcode=FT_Get_Next_Char(face, charcode, &glyph_index)) {
+	for(ft_charcode=FT_Get_First_Char(face, &ft_glyph_index); ft_glyph_index != 0;
+		ft_charcode=FT_Get_Next_Char(face, ft_charcode, &ft_glyph_index)) {
 
-		int idx = charcode/SubfontSize;
+		int idx = ft_charcode/SubfontSize;
 
-		if(charcode > Runemax)
+		if(ft_charcode > Runemax)
 			break;
 
 		if(!f->range[idx])
 			f->range[idx] = 1;
 	}
 	FT_Done_Face(face);
+#endif
 
-	// libdraw expects U+0000 to be present
 	if(!f->range[0])
 		f->range[0] = 1;
 
-	// fix up file list
 	for(i=0; i<nelem(f->range); i++)
 		if(f->range[i])
 			f->file[f->nfile++] = i;
@@ -109,15 +185,112 @@ load(XFont *f)
 Memsubfont*
 mksubfont(XFont *xf, char *name, int lo, int hi, int size, int antialias)
 {
-	FT_Face face;
-	FT_Error e;
+	int e;
 	Memimage *m, *mc, *m1;
 	double pixel_size;
 	int w, x, y, y0;
 	int i;
-	Fontchar *fc, *fc0;
+	Fontchar *fc0, *fc1;
 	Memsubfont *sf;
-	//Point rect_points[4];
+
+#if defined(__CYGWIN__) || defined(__MSYS__)
+	FTShimFace face;
+	int FT_LOAD_RENDER_val = ftshim_load_render();
+	int FT_LOAD_NO_AUTOHINT_val = ftshim_load_no_autohint();
+	int FT_LOAD_TARGET_MONO_val = ftshim_load_target_mono();
+
+	e = ftshim_new_face(lib, xf->fontfile, xf->index, &face);
+	if(e){
+		fprint(2, "load failed for %s (%s) index:%d\n", xf->name, xf->fontfile, xf->index);
+		return nil;
+	}
+
+	e = ftshim_set_char_size(face, 0, size<<6, dpi, dpi);
+	if(e){
+		fprint(2, "FT_Set_Char_Size failed\n");
+		ftshim_done_face(face);
+		return nil;
+	}
+
+	pixel_size = (dpi*size)/72.0;
+	w = x = (int)((ftshim_max_advance_width(face)) * pixel_size/xf->unit + 0.99999999);
+	y = (int)((ftshim_ascender(face) - ftshim_descender(face)) * pixel_size/xf->unit + 0.99999999);
+	y0 = (int)((-ftshim_descender(face)) * pixel_size/xf->unit + 0.99999999);
+
+	m = allocmemimage(Rect(0, 0, x*(hi+1-lo)+1, y+1), antialias ? GREY8 : GREY1);
+	if(m == nil) {
+		ftshim_done_face(face);
+		return nil;
+	}
+	mc = allocmemimage(Rect(0, 0, x+1, y+1), antialias ? GREY8 : GREY1);
+	if(mc == nil) {
+		freememimage(m);
+		ftshim_done_face(face);
+		return nil;
+	}
+	memfillcolor(m, DBlack);
+	memfillcolor(mc, DBlack);
+	fc1 = malloc((hi+2 - lo) * sizeof fc1[0]);
+	sf = malloc(sizeof *sf);
+	if(fc1 == nil || sf == nil) {
+		freememimage(m);
+		freememimage(mc);
+		free(fc1);
+		free(sf);
+		ftshim_done_face(face);
+		return nil;
+	}
+	fc0 = fc1;
+
+	x = 0;
+	for(i=lo; i<=hi; i++, fc1++) {
+		unsigned int k;
+		int r;
+		int advance;
+
+		memfillcolor(mc, DBlack);
+
+		fc1->x = x;
+		fc1->top = 0;
+		fc1->bottom = Dy(m->r);
+		e = 1;
+		k = ftshim_get_char_index(face, i);
+		if(k != 0) {
+			e = ftshim_load_glyph(face, k,
+				FT_LOAD_RENDER_val|FT_LOAD_NO_AUTOHINT_val|(antialias ? 0:FT_LOAD_TARGET_MONO_val));
+		}
+		if(e || ftshim_glyph_advance_x(face) <= 0) {
+			fc1->width = 0;
+			fc1->left = 0;
+			if(i == 0) {
+				drawpjw(m, fc1, x, w, y, y - y0);
+				x += fc1->width;
+			}
+			continue;
+		}
+
+		uchar *base = byteaddr(mc, mc->r.min);
+		advance = (ftshim_glyph_advance_x(face)+32) >> 6;
+
+		unsigned int brows = ftshim_glyph_bitmap_rows(face);
+		int bpitch = ftshim_glyph_bitmap_pitch(face);
+		uchar *bbuf = ftshim_glyph_bitmap_buffer(face);
+
+		for(r=0; r < (int)brows; r++)
+			memmove(base + r*mc->width*sizeof(u32int), bbuf + r*bpitch, bpitch);
+
+		memimagedraw(m, Rect(x, 0, x + advance, y), mc,
+			Pt(-ftshim_glyph_bitmap_left(face), -(y - y0 - ftshim_glyph_bitmap_top(face))),
+			memopaque, ZP, S);
+
+		fc1->width = advance;
+		fc1->left = 0;
+		x += advance;
+	}
+	fc1->x = x;
+	ftshim_done_face(face);
+#else
+	FT_Face face;
 
 	e = FT_New_Face(lib, xf->fontfile, xf->index, &face);
 	if(e){
@@ -150,44 +323,39 @@ mksubfont(XFont *xf, char *name, int lo, int hi, int size, int antialias)
 	}
 	memfillcolor(m, DBlack);
 	memfillcolor(mc, DBlack);
-	fc = malloc((hi+2 - lo) * sizeof fc[0]);
+	fc1 = malloc((hi+2 - lo) * sizeof fc1[0]);
 	sf = malloc(sizeof *sf);
-	if(fc == nil || sf == nil) {
+	if(fc1 == nil || sf == nil) {
 		freememimage(m);
 		freememimage(mc);
-		free(fc);
+		free(fc1);
 		free(sf);
 		FT_Done_Face(face);
 		return nil;
 	}
-	fc0 = fc;
-
-	//rect_points[0] = mc->r.min;
-	//rect_points[1] = Pt(mc->r.max.x, mc->r.min.y);
-	//rect_points[2] = mc->r.max;
-	//rect_points[3] = Pt(mc->r.min.x, mc->r.max.y);
+	fc0 = fc1;
 
 	x = 0;
-	for(i=lo; i<=hi; i++, fc++) {
+	for(i=lo; i<=hi; i++, fc1++) {
 		int k, r;
 		int advance;
 
 		memfillcolor(mc, DBlack);
 
-		fc->x = x;
-		fc->top = 0;
-		fc->bottom = Dy(m->r);
+		fc1->x = x;
+		fc1->top = 0;
+		fc1->bottom = Dy(m->r);
 		e = 1;
 		k = FT_Get_Char_Index(face, i);
 		if(k != 0) {
 			e = FT_Load_Glyph(face, k, FT_LOAD_RENDER|FT_LOAD_NO_AUTOHINT|(antialias ? 0:FT_LOAD_TARGET_MONO));
 		}
 		if(e || face->glyph->advance.x <= 0) {
-			fc->width = 0;
-			fc->left = 0;
+			fc1->width = 0;
+			fc1->left = 0;
 			if(i == 0) {
-				drawpjw(m, fc, x, w, y, y - y0);
-				x += fc->width;
+				drawpjw(m, fc1, x, w, y, y - y0);
+				x += fc1->width;
 			}
 			continue;
 		}
@@ -196,44 +364,21 @@ mksubfont(XFont *xf, char *name, int lo, int hi, int size, int antialias)
 		uchar *base = byteaddr(mc, mc->r.min);
 		advance = (face->glyph->advance.x+32) >> 6;
 
-		for(r=0; r < bitmap->rows; r++)
+		for(r=0; r < (int)bitmap->rows; r++)
 			memmove(base + r*mc->width*sizeof(u32int), bitmap->buffer + r*bitmap->pitch, bitmap->pitch);
 
 		memimagedraw(m, Rect(x, 0, x + advance, y), mc,
 			Pt(-face->glyph->bitmap_left, -(y - y0 - face->glyph->bitmap_top)),
 			memopaque, ZP, S);
 
-		fc->width = advance;
-		fc->left = 0;
+		fc1->width = advance;
+		fc1->left = 0;
 		x += advance;
-
-#ifdef DEBUG_FT_BITMAP
-		for(r=0; r < bitmap->rows; r++) {
-			int c;
-			uchar *span = bitmap->buffer+(r*bitmap->pitch);
-			for(c = 0; c < bitmap->width; c++) {
-				fprint(1, "%02x", span[c]);
-			}
-			fprint(1,"\n");
-		}
-#endif
-
-#ifdef DEBUG_9_BITMAP
-		for(r=0; r < mc->r.max.y; r++) {
-			int c;
-			uchar *span = base+(r*mc->width*sizeof(u32int));
-			for(c = 0; c < Dx(mc->r); c++) {
-				fprint(1, "%02x", span[c]);
-			}
-			fprint(1,"\n");
-		}
-#endif
 	}
-	fc->x = x;
+	fc1->x = x;
+	FT_Done_Face(face);
+#endif
 
-	// round up to 32-bit boundary
-	// so that in-memory data is same
-	// layout as in-file data.
 	if(x == 0)
 		x = 1;
 	if(y == 0)
@@ -254,6 +399,5 @@ mksubfont(XFont *xf, char *name, int lo, int hi, int size, int antialias)
 	sf->info = fc0;
 	sf->bits = m1;
 
-	FT_Done_Face(face);
 	return sf;
 }

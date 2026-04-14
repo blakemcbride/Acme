@@ -43,6 +43,25 @@ extern "C" {
 #endif
 #define _LARGEFILE64_SOURCE 1
 #define _FILE_OFFSET_BITS 64
+#if defined(_WIN32) && !defined(__CYGWIN__)
+/* Native Windows (mingw64) */
+#include <inttypes.h>
+#include <io.h>
+#include <direct.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <fcntl.h>
+#include <assert.h>
+#include <setjmp.h>
+#include <stddef.h>
+#include <math.h>
+#include <ctype.h>
+
+typedef int p9jmp_buf[sizeof(jmp_buf)/(sizeof(int))];
+
+#else
+/* POSIX (Linux, macOS, Cygwin/MSYS) */
 #define __USE_POSIX 1 //needed for sigjmp_buf in glibc setjmp.h
 #include <inttypes.h>
 
@@ -57,6 +76,10 @@ extern "C" {
 #include <math.h>
 #include <ctype.h>	/* for tolower */
 
+typedef long p9jmp_buf[sizeof(sigjmp_buf)/(sizeof(long))];
+
+#endif
+
 /*
  * OS-specific crap
  */
@@ -64,8 +87,6 @@ extern "C" {
 #define _NEEDUSHORT 1
 #define _NEEDUINT 1
 #define _NEEDULONG 1
-
-typedef long p9jmp_buf[sizeof(sigjmp_buf)/(sizeof(long))];
 
 #if defined(__linux__)
 #	include <sys/types.h>
@@ -123,6 +144,9 @@ typedef long p9jmp_buf[sizeof(sigjmp_buf)/(sizeof(long))];
 #	undef _NEEDUSHORT
 #	undef _NEEDUINT
 #	undef _NEEDULONG
+#elif defined(_WIN32)
+	/* Native Windows (mingw64) — keep _NEED* so typedefs are defined below */
+#	include <pthread.h>
 #else
 	/* No idea what system this is -- try some defaults */
 #	include <pthread.h>

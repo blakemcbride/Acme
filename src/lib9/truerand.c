@@ -1,6 +1,30 @@
 #include <u.h>
 #include <libc.h>
 
+#ifdef _WIN32
+
+#include <windows.h>
+#include <wincrypt.h>
+
+ulong
+truerand(void)
+{
+	ulong x;
+	HCRYPTPROV prov;
+
+	x = 0;
+	if(CryptAcquireContextA(&prov, nil, nil, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT)){
+		CryptGenRandom(prov, sizeof x, (BYTE*)&x);
+		CryptReleaseContext(prov, 0);
+	}else{
+		/* fallback */
+		x = (ulong)GetTickCount() ^ (ulong)GetCurrentProcessId();
+	}
+	return x;
+}
+
+#else
+
 ulong
 truerand(void)
 {
@@ -25,3 +49,5 @@ truerand(void)
 	memmove(&x, buf, sizeof x);
 	return x;
 }
+
+#endif

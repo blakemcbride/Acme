@@ -1,3 +1,4 @@
+#if !defined(_WIN32) || defined(__CYGWIN__)
 #include <u.h>
 #include <libc.h>
 
@@ -28,3 +29,4 @@ sysname(void)
 	strcpy(buf, "gnot");
 	return buf;
 }
+#endif /* !defined(_WIN32) || defined(__CYGWIN__) */

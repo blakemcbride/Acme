@@ -85,6 +85,149 @@ threadwaitchan(void)
 	return thewaitchan;
 }
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
+/*
+ * Build a Windows command line string from argv[].
+ * Caller must free the result.
+ */
+static char*
+buildcmdline(char *argv[])
+{
+	int i, n;
+	char *s, *p;
+
+	n = 0;
+	for(i=0; argv[i]; i++)
+		n += strlen(argv[i]) + 3; /* quotes + space */
+	s = malloc(n+1);
+	if(s == nil)
+		return nil;
+	p = s;
+	for(i=0; argv[i]; i++){
+		if(i > 0)
+			*p++ = ' ';
+		/* simple quoting: wrap in double quotes if contains space */
+		if(strchr(argv[i], ' ') || strchr(argv[i], '\t')){
+			*p++ = '"';
+			memmove(p, argv[i], strlen(argv[i]));
+			p += strlen(argv[i]);
+			*p++ = '"';
+		}else{
+			memmove(p, argv[i], strlen(argv[i]));
+			p += strlen(argv[i]);
+		}
+	}
+	*p = '\0';
+	return s;
+}
+
+/*
+ * Process handle table: maps Windows PIDs to HANDLEs
+ * so that await/waitfor can use WaitForSingleObject.
+ */
+#define MAX_CHILD_PROCS 256
+static struct {
+	Lock lk;
+	struct { DWORD pid; HANDLE h; } entries[MAX_CHILD_PROCS];
+	int n;
+} proctab;
+
+void
+_threadaddproc(DWORD pid, HANDLE h)
+{
+	lock(&proctab.lk);
+	if(proctab.n < MAX_CHILD_PROCS){
+		proctab.entries[proctab.n].pid = pid;
+		proctab.entries[proctab.n].h = h;
+		proctab.n++;
+	}
+	unlock(&proctab.lk);
+}
+
+HANDLE
+_threadprochandle(int pid)
+{
+	int i;
+	HANDLE h = INVALID_HANDLE_VALUE;
+
+	lock(&proctab.lk);
+	for(i=0; i<proctab.n; i++){
+		if(proctab.entries[i].pid == (DWORD)pid){
+			h = proctab.entries[i].h;
+			/* remove entry */
+			proctab.entries[i] = proctab.entries[--proctab.n];
+			break;
+		}
+	}
+	unlock(&proctab.lk);
+	return h;
+}
+
+int
+_threadspawn(int fd[3], char *cmd, char *argv[], char *dir)
+{
+	char *cmdline;
+	STARTUPINFOA si;
+	PROCESS_INFORMATION pi;
+	HANDLE hStdin, hStdout, hStderr;
+	BOOL ok;
+
+	cmdline = buildcmdline(argv);
+	if(cmdline == nil)
+		return -1;
+
+	memset(&si, 0, sizeof si);
+	si.cb = sizeof si;
+	si.dwFlags = STARTF_USESTDHANDLES;
+
+	hStdin = (HANDLE)_get_osfhandle(fd[0]);
+	hStdout = (HANDLE)_get_osfhandle(fd[1]);
+	hStderr = (HANDLE)_get_osfhandle(fd[2]);
+
+	/* ensure handles are inheritable */
+	SetHandleInformation(hStdin, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT);
+	SetHandleInformation(hStdout, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT);
+	SetHandleInformation(hStderr, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT);
+
+	si.hStdInput = hStdin;
+	si.hStdOutput = hStdout;
+	si.hStdError = hStderr;
+
+	ok = CreateProcessA(
+		nil,		/* application name (use cmdline) */
+		cmdline,	/* command line */
+		nil,		/* process security */
+		nil,		/* thread security */
+		TRUE,		/* inherit handles */
+		CREATE_NEW_PROCESS_GROUP,
+		nil,		/* environment (inherit) */
+		dir,		/* working directory */
+		&si,
+		&pi);
+
+	free(cmdline);
+
+	if(!ok)
+		return -1;
+
+	CloseHandle(pi.hThread);
+	_threadaddproc(pi.dwProcessId, pi.hProcess);
+
+	close(fd[0]);
+	if(fd[1] != fd[0])
+		close(fd[1]);
+	if(fd[2] != fd[1] && fd[2] != fd[0])
+		close(fd[2]);
+
+	return (int)pi.dwProcessId;
+}
+
+#else /* POSIX */
+
 int
 _threadspawn(int fd[3], char *cmd, char *argv[], char *dir)
 {
@@ -139,6 +282,8 @@ _threadspawn(int fd[3], char *cmd, char *argv[], char *dir)
 		close(fd[2]);
 	return pid;
 }
+
+#endif /* _WIN32 */
 
 int
 threadspawn(int fd[3], char *cmd, char *argv[])

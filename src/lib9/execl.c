@@ -1,6 +1,18 @@
 #include <u.h>
 #include <libc.h>
 
+#ifdef _WIN32
+
+int
+execl(char *prog, ...)
+{
+	USED(prog);
+	werrstr("execl not supported on Windows");
+	return -1;
+}
+
+#else
+
 int
 execl(char *prog, ...)
 {
@@ -26,3 +38,5 @@ execl(char *prog, ...)
 	free(argv);
 	return -1;
 }
+
+#endif

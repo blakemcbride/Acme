@@ -686,7 +686,11 @@ void
 gfx_main(void)
 {
 	/* Silence libdecor "failed to load plugin" warnings on stderr */
+#if defined(_WIN32) && !defined(__CYGWIN__)
+	int devnull = -1;  /* no /dev/null on Windows */
+#else
 	int devnull = open("/dev/null", O_WRONLY);
+#endif
 	int saved_stderr = -1;
 	if(devnull >= 0){
 		saved_stderr = dup(2, -1);

@@ -1,3 +1,4 @@
+#if !defined(_WIN32) || defined(__CYGWIN__)
 #include <u.h>
 #include <libc.h>
 #include <draw.h>
@@ -24,3 +25,4 @@ newwindow(char *str)
 		strcpy(buf, "new");
 	return mount(fd, -1, "/dev", MBEFORE, buf);
 }
+#endif

@@ -81,8 +81,9 @@ cachechars(Font *f, char **ss, Rune **rr, ushort *cp, int max, int *wp, char **s
 			}
 		}
 
-		if(c->age == f->age)	/* flush pending string output */
+		if(c->age == f->age){	/* flush pending string output */
 			break;
+		}
 
 		ld = loadchar(f, r, c, h, i, subfontname);
 		if(ld <= 0){
@@ -299,10 +300,15 @@ loadchar(Font *f, Rune r, Cacheinfo *c, int h, int noflush, char **subfontname)
 	c->left = fi->left;
 	if(f->display == nil)
 		return 1;
-	flushimage(f->display, 0);	/* flush any pending errors */
-	b = bufimage(f->display, 37);
-	if(b == 0)
+	if(flushimage(f->display, 0) < 0){
+		fprint(2, "loadchar: flushimage failed: %r\n");
 		return 0;
+	}
+	b = bufimage(f->display, 37);
+	if(b == 0){
+		fprint(2, "loadchar: bufimage failed: %r\n");
+		return 0;
+	}
 	b[0] = 'l';
 	BPLONG(b+1, f->cacheimage->id);
 	BPLONG(b+5, subf->f->bits->id);

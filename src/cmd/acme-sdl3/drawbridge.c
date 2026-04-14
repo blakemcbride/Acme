@@ -93,6 +93,17 @@ _displayinit(Display *d, char *label, char *winsize)
 	if(m == nil)
 		return -1;
 	draw_initdisplaymemimage(client0, m);
+
+	/*
+	 * Set locking=1 so libdraw's _getsubfont skips the
+	 * unlock/relock dance.  In standalone mode there is no mux
+	 * thread and display ops are single-threaded, so the display
+	 * QLock is unnecessary.  Without this, _getsubfont corrupts
+	 * the lock state (plan9port latent bug), causing cachechars
+	 * to loop infinitely.
+	 */
+	d->locking = 1;
+
 	return 0;
 }
 

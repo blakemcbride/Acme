@@ -2,6 +2,15 @@
 #include <libc.h>
 #include <auth.h>
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+int
+auth_getkey(char *params)
+{
+	USED(params);
+	werrstr("auth_getkey not supported on Windows");
+	return -1;
+}
+#else
 int
 auth_getkey(char *params)
 {
@@ -40,3 +49,4 @@ auth_getkey(char *params)
 	}
 	return 0;
 }
+#endif

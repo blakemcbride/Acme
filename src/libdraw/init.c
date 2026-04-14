@@ -138,6 +138,9 @@ getimage0(Display *d, Image *image)
 	}
 
 	a = bufimage(d, 2);
+	if(a == nil){
+		return nil;
+	}
 	a[0] = 'J';
 	a[1] = 'I';
 	if(flushimage(d, 0) < 0){

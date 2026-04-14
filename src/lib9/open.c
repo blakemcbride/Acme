@@ -2,10 +2,79 @@
 #include <u.h>
 #include <dirent.h>
 #include <errno.h>
+#ifndef _WIN32
 #include <sys/file.h>
+#endif
 #include <sys/stat.h>
 #define NOPLAN9DEFINES
 #include <libc.h>
+
+#ifdef _WIN32
+#include <io.h>
+#include <fcntl.h>
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
+typedef struct WinDir WinDir;
+struct WinDir {
+	HANDLE h;		/* from FindFirstFileA */
+	WIN32_FIND_DATAA fd;
+	int first;		/* 1 if fd from FindFirstFile not yet consumed */
+	char path[MAX_PATH];
+};
+
+static struct {
+	Lock lk;
+	WinDir **d;
+	int nd;
+} wdirs;
+
+static int
+wdirput(int fd, WinDir *d)
+{
+	int i, nd;
+	WinDir **dp;
+	if(fd < 0)
+		return -1;
+	lock(&wdirs.lk);
+	if(fd >= wdirs.nd){
+		nd = wdirs.nd*2;
+		if(nd <= fd) nd = fd+1;
+		dp = realloc(wdirs.d, nd*sizeof wdirs.d[0]);
+		if(dp == nil){ unlock(&wdirs.lk); return -1; }
+		for(i=wdirs.nd; i<nd; i++) dp[i] = nil;
+		wdirs.d = dp;
+		wdirs.nd = nd;
+	}
+	wdirs.d[fd] = d;
+	unlock(&wdirs.lk);
+	return 0;
+}
+
+static WinDir*
+wdirget(int fd)
+{
+	WinDir *d = nil;
+	lock(&wdirs.lk);
+	if(0 <= fd && fd < wdirs.nd)
+		d = wdirs.d[fd];
+	unlock(&wdirs.lk);
+	return d;
+}
+
+static WinDir*
+wdirdel(int fd)
+{
+	WinDir *d = nil;
+	lock(&wdirs.lk);
+	if(0 <= fd && fd < wdirs.nd){
+		d = wdirs.d[fd];
+		wdirs.d[fd] = nil;
+	}
+	unlock(&wdirs.lk);
+	return d;
+}
+#endif
 
 static struct {
 	Lock lk;
@@ -76,7 +145,9 @@ int
 p9create(char *path, int mode, ulong perm)
 {
 	int fd, cexec, umode, rclose, lock, rdwr;
+#ifndef _WIN32
 	struct flock fl;
+#endif
 
 	rdwr = mode&3;
 	lock = mode&OLOCK;
@@ -91,16 +162,22 @@ p9create(char *path, int mode, ulong perm)
 			werrstr("bad mode in directory create");
 			goto out;
 		}
+#ifdef _WIN32
+		mkdir(path);
+#else
 		if(mkdir(path, perm&0777) < 0)
 			goto out;
+#endif
 		fd = open(path, O_RDONLY);
 	}else{
 		umode = (mode&3)|O_CREAT|O_TRUNC;
 		mode &= ~(3|OTRUNC);
+#ifdef O_DIRECT
 		if(mode&ODIRECT){
 			umode |= O_DIRECT;
 			mode &= ~ODIRECT;
 		}
+#endif
 		if(mode&OEXCL){
 			umode |= O_EXCL;
 			mode &= ~OEXCL;
@@ -117,6 +194,7 @@ p9create(char *path, int mode, ulong perm)
 	}
 out:
 	if(fd >= 0){
+#ifndef _WIN32
 		if(lock){
 			fl.l_type = (rdwr==OREAD) ? F_RDLCK : F_WRLCK;
 			fl.l_whence = SEEK_SET;
@@ -130,6 +208,11 @@ out:
 		}
 		if(cexec)
 			fcntl(fd, F_SETFL, FD_CLOEXEC);
+#else
+		USED(lock);
+		USED(rdwr);
+		USED(cexec);
+#endif
 		if(rclose)
 			remove(path);
 	}
@@ -141,7 +224,9 @@ p9open(char *name, int mode)
 {
 	int cexec, rclose;
 	int fd, umode, lock, rdwr;
+#ifndef _WIN32
 	struct flock fl;
+#endif
 	struct stat st;
 	DIR *d;
 
@@ -155,14 +240,24 @@ p9open(char *name, int mode)
 		umode |= O_TRUNC;
 		mode ^= OTRUNC;
 	}
+#ifdef O_DIRECT
 	if(mode&ODIRECT){
 		umode |= O_DIRECT;
 		mode ^= ODIRECT;
 	}
+#else
+	if(mode&ODIRECT)
+		mode ^= ODIRECT;
+#endif
+#ifdef O_NONBLOCK
 	if(mode&ONONBLOCK){
 		umode |= O_NONBLOCK;
 		mode ^= ONONBLOCK;
 	}
+#else
+	if(mode&ONONBLOCK)
+		mode ^= ONONBLOCK;
+#endif
 	if(mode&OAPPEND){
 		umode |= O_APPEND;
 		mode ^= OAPPEND;
@@ -171,8 +266,39 @@ p9open(char *name, int mode)
 		werrstr("mode 0x%x not supported", mode);
 		return -1;
 	}
+#ifdef _WIN32
+	/* On Windows, open() can't open directories.  Detect and handle. */
+	if(stat(name, &st) >= 0 && (st.st_mode & _S_IFDIR)){
+		HANDLE h = CreateFileA(name, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE, nil,
+			OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nil);
+		if(h == INVALID_HANDLE_VALUE){
+			werrstr("can't open directory");
+			return -1;
+		}
+		fd = _open_osfhandle((intptr_t)h, _O_RDONLY);
+		if(fd < 0){
+			CloseHandle(h);
+			return -1;
+		}
+		WinDir *wd = mallocz(sizeof(WinDir), 1);
+		if(wd == nil){
+			close(fd);
+			return -1;
+		}
+		wd->h = INVALID_HANDLE_VALUE;
+		wd->first = 0;
+		strncpy(wd->path, name, sizeof wd->path - 1);
+		if(wdirput(fd, wd) < 0){
+			free(wd);
+			close(fd);
+			return -1;
+		}
+		return fd;
+	}
+#endif
 	fd = open(name, umode);
 	if(fd >= 0){
+#ifndef _WIN32
 		if(lock){
 			fl.l_type = (rdwr==OREAD) ? F_RDLCK : F_WRLCK;
 			fl.l_whence = SEEK_SET;
@@ -197,6 +323,14 @@ p9open(char *name, int mode)
 				return -1;
 			}
 		}
+#else
+		USED(lock);
+		USED(rdwr);
+		USED(cexec);
+		USED(st);
+		USED(d);
+		/* On Windows, directory reading is handled differently */
+#endif
 		if(rclose)
 			remove(name);
 	}
@@ -225,11 +359,21 @@ p9seek(int fd, vlong offset, int whence)
 int
 p9close(int fd)
 {
+#ifdef _WIN32
+	WinDir *wd;
+	if((wd = wdirdel(fd)) != nil){
+		if(wd->h != INVALID_HANDLE_VALUE)
+			FindClose(wd->h);
+		free(wd);
+		return close(fd);
+	}
+	return close(fd);
+#else
 	DIR *d;
-
 	if((d = dirdel(fd)) != nil)
 		return closedir(d);
 	return close(fd);
+#endif
 }
 
 typedef struct DirBuild DirBuild;
@@ -242,6 +386,8 @@ struct DirBuild {
 };
 
 extern int _p9dir(struct stat*, struct stat*, char*, Dir*, char**, char*);
+
+#ifndef _WIN32
 
 static int
 dirbuild1(DirBuild *b, struct stat *lst, struct stat *st, char *name)
@@ -345,3 +491,129 @@ dirreadall(int fd, Dir **dp)
 {
 	return dirreadmax(fd, dp, -1);
 }
+
+#else /* _WIN32 */
+
+static Dir*
+winfd_to_dir(WIN32_FIND_DATAA *fd)
+{
+	Dir *d;
+	char *name;
+	int namelen;
+	ULARGE_INTEGER size, mtime, atime;
+
+	namelen = strlen(fd->cFileName);
+	d = mallocz(sizeof(Dir) + namelen + 1 + 4 + 4 + 1, 1);
+	if(d == nil)
+		return nil;
+	name = (char*)&d[1];
+	memmove(name, fd->cFileName, namelen+1);
+	d->name = name;
+	d->uid = name + namelen + 1;
+	strcpy(d->uid, "none");
+	d->gid = d->uid;
+	d->muid = "";
+	size.HighPart = fd->nFileSizeHigh;
+	size.LowPart = fd->nFileSizeLow;
+	d->length = size.QuadPart;
+	d->mode = 0644;
+	/* Windows FILETIME is 100ns intervals since 1601; convert to Unix epoch */
+	mtime.HighPart = fd->ftLastWriteTime.dwHighDateTime;
+	mtime.LowPart = fd->ftLastWriteTime.dwLowDateTime;
+	d->mtime = (mtime.QuadPart - 116444736000000000ULL) / 10000000ULL;
+	atime.HighPart = fd->ftLastAccessTime.dwHighDateTime;
+	atime.LowPart = fd->ftLastAccessTime.dwLowDateTime;
+	d->atime = (atime.QuadPart - 116444736000000000ULL) / 10000000ULL;
+	d->qid.path = 0;
+	d->qid.vers = d->mtime;
+	d->qid.type = 0;
+	if(fd->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY){
+		d->mode = DMDIR | 0755;
+		d->qid.type = QTDIR;
+		d->length = 0;
+	}
+	d->type = 'M';
+	return d;
+}
+
+static long
+winreadmax(int fd, Dir **dp, int max)
+{
+	WinDir *wd;
+	Dir *arr, *tmp;
+	char pattern[MAX_PATH + 4];
+	int n, cap;
+
+	wd = wdirget(fd);
+	if(wd == nil){
+		werrstr("not a directory");
+		return -1;
+	}
+
+	if(wd->h == INVALID_HANDLE_VALUE){
+		/* First call: start the enumeration */
+		snprint(pattern, sizeof pattern, "%s/*", wd->path);
+		wd->h = FindFirstFileA(pattern, &wd->fd);
+		if(wd->h == INVALID_HANDLE_VALUE){
+			*dp = nil;
+			return 0;
+		}
+		wd->first = 1;
+	}
+
+	arr = nil;
+	n = 0;
+	cap = 0;
+	for(;;){
+		if(max >= 0 && n >= max)
+			break;
+		if(wd->first){
+			wd->first = 0;
+		}else{
+			if(!FindNextFileA(wd->h, &wd->fd))
+				break;
+		}
+		/* skip "." and ".." */
+		if(wd->fd.cFileName[0]=='.' && wd->fd.cFileName[1]==0)
+			continue;
+		if(wd->fd.cFileName[0]=='.' && wd->fd.cFileName[1]=='.' && wd->fd.cFileName[2]==0)
+			continue;
+		if(n >= cap){
+			cap = cap ? cap*2 : 16;
+			tmp = realloc(arr, cap * sizeof(Dir));
+			if(tmp == nil){
+				free(arr);
+				return -1;
+			}
+			arr = tmp;
+		}
+		{
+			Dir *entry = winfd_to_dir(&wd->fd);
+			if(entry == nil) continue;
+			arr[n] = *entry;
+			/* fix up string pointers - they point inside entry */
+			arr[n].name = strdup(entry->name);
+			arr[n].uid = strdup(entry->uid);
+			arr[n].gid = arr[n].uid;
+			arr[n].muid = "";
+			free(entry);
+			n++;
+		}
+	}
+	*dp = arr;
+	return n;
+}
+
+long
+dirread(int fd, Dir **dp)
+{
+	return winreadmax(fd, dp, 10);
+}
+
+long
+dirreadall(int fd, Dir **dp)
+{
+	return winreadmax(fd, dp, -1);
+}
+
+#endif

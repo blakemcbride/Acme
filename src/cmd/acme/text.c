@@ -399,8 +399,9 @@ textinsert(Text *t, uint q0, Rune *r, uint n, int tofile)
 		t->q0 += n;
 	if(q0 < t->org)
 		t->org += n;
-	else if(q0 <= t->org+t->fr.nchars)
+	else if(q0 <= t->org+t->fr.nchars){
 		frinsert(&t->fr, r, r+n, q0-t->org);
+	}
 	if(t->w){
 		c = 'i';
 		if(t->what == Body)
@@ -697,11 +698,17 @@ texttype(Text *t, Rune r)
 		return;
 	case Kfwddel:
 		typecommit(t);
+		if(t->what == Body){
+			seq++;
+			filemark(t->file);
+		}
 		if(t->q0 < t->file->b.nc) {
 			textdelete(t, t->q0, t->q0+1, TRUE);
 			textsetselect(t, t->q0, t->q0);
 			textfill(t);
 		}
+		if(t->what == Body)
+			winsettag(t->w);
 		t->iq1 = t->q0;
 		return;
 	case Kdown:
@@ -935,6 +942,8 @@ texttype(Text *t, Rune r)
 		}
 		for(i=0; i<t->file->ntext; i++)
 			textfill(t->file->text[i]);
+		if(t->what == Body)
+			winsettag(t->w);
 		t->iq1 = t->q0;
 		return;
 	case '\n':

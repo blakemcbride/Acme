@@ -1,5 +1,8 @@
 #include "u.h"
 #include <errno.h>
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#include <signal.h>
+#else
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -11,6 +14,7 @@
 #	endif
 #endif
 #include <sys/utsname.h>
+#endif
 #include "libc.h"
 #include "thread.h"
 

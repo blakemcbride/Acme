@@ -39,8 +39,16 @@ Rune	snarfrune[NSnarf+1];
 
 char		*fontnames[2] =
 {
+#if defined(_WIN32) || defined(__CYGWIN__) || defined(__MSYS__)
+	"Consolas/13a/font",
+	"Consolas/13a/font"
+#elif defined(__APPLE__)
 	"DejaVuSansMono/13a/font",
 	"DejaVuSansMono/13a/font"
+#else
+	"DejaVuSansMono/13a/font",
+	"DejaVuSansMono/13a/font"
+#endif
 };
 
 Command *command;
@@ -62,6 +70,7 @@ threadmain(int argc, char *argv[])
 {
 	int i;
 	char *p, *loadfile;
+
 	Column *c;
 	int ncol;
 	Display *d;
@@ -156,6 +165,15 @@ threadmain(int argc, char *argv[])
 	bind("/acme/bin", "/bin", MBEFORE);
 */
 	getwd(wdir, sizeof wdir);
+#if defined(_WIN32) && !defined(__CYGWIN__)
+	/* Normalize backslashes to forward slashes */
+	{
+		char *wp;
+		for(wp = wdir; *wp; wp++)
+			if(*wp == '\\')
+				*wp = '/';
+	}
+#endif
 
 /*
 	if(geninitdraw(nil, derror, fontnames[0], "acme", nil, Refnone) < 0){
@@ -184,7 +202,7 @@ threadmain(int argc, char *argv[])
 	timerinit();
 	rxinit();
 
-	cwait = threadwaitchan();
+	cwaitchan = threadwaitchan();
 	ccommand = chancreate(sizeof(Command**), 0);
 	ckill = chancreate(sizeof(Rune*), 0);
 	cxfidalloc = chancreate(sizeof(Xfid*), 0);
@@ -195,7 +213,7 @@ threadmain(int argc, char *argv[])
 	cexit = chancreate(sizeof(int), 0);
 	cwarn = chancreate(sizeof(void*), 1);
 	cptyout = chancreate(sizeof(void*), 1);
-	if(cwait==nil || ccommand==nil || ckill==nil || cxfidalloc==nil || cxfidfree==nil || cerr==nil || cexit==nil || cwarn==nil || cptyout==nil){
+	if(cwaitchan==nil || ccommand==nil || ckill==nil || cxfidalloc==nil || cxfidfree==nil || cerr==nil || cexit==nil || cwarn==nil || cptyout==nil){
 		fprint(2, "acme: can't create initial channels: %r\n");
 		threadexitsall("channels");
 	}
@@ -292,10 +310,18 @@ readfile(Column *c, char *s)
 	Runestr rs;
 
 	w = coladd(c, nil, nil, -1);
+#if defined(_WIN32) && !defined(__CYGWIN__)
+	/* Windows: absolute paths start with drive letter+colon or \\ */
+	if(s[0] != '/' && s[0] != '\\' && !(s[0] && s[1] == ':'))
+		runesnprint(rb, sizeof rb, "%s/%s", wdir, s);
+	else
+		runesnprint(rb, sizeof rb, "%s", s);
+#else
 	if(s[0] != '/')
 		runesnprint(rb, sizeof rb, "%s/%s", wdir, s);
 	else
 		runesnprint(rb, sizeof rb, "%s", s);
+#endif
 	nr = runestrlen(rb);
 	rs = cleanrname(runestr(rb, nr));
 	winsetname(w, rs.r, rs.nr);
@@ -421,8 +447,10 @@ acmeerrorinit(void)
 	sprint(buf, "/fd/%d", pfd[1]);
 	errorfd = open(buf, OREAD|OCEXEC);
 #endif
+#if !defined(_WIN32) || defined(__CYGWIN__)
 	fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
 	fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
+#endif
 	erroutfd = pfd[0];
 	errorfd = pfd[1];
 	if(errorfd < 0)
@@ -726,7 +754,7 @@ waitthread(void *v)
 	alts[WKill].c = ckill;
 	alts[WKill].v = &cmd;
 	alts[WKill].op = CHANRCV;
-	alts[WWait].c = cwait;
+	alts[WWait].c = cwaitchan;
 	alts[WWait].v = &w;
 	alts[WWait].op = CHANRCV;
 	alts[WCmd].c = ccommand;

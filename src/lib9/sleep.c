@@ -1,3 +1,30 @@
+#ifdef _WIN32
+
+#include <u.h>
+#define NOPLAN9DEFINES
+#include <libc.h>
+#include <windows.h>
+
+int
+p9sleep(long milli)
+{
+	if(milli <= 0){
+		Sleep(0);
+		return 0;
+	}
+	Sleep(milli);
+	return 0;
+}
+
+long
+p9alarm(ulong milli)
+{
+	USED(milli);
+	return 0;
+}
+
+#else
+
 #include <u.h>
 #define NOPLAN9DEFINES
 #include <sys/param.h>
@@ -45,3 +72,5 @@ p9alarm(ulong milli)
 		return -1;
 	return oitv.it_value.tv_sec*1000+oitv.it_value.tv_usec/1000;
 }
+
+#endif

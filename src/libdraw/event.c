@@ -1,3 +1,4 @@
+#if !defined(_WIN32) || defined(__CYGWIN__)
 #include <u.h>
 #include <sys/select.h>
 #include <libc.h>
@@ -438,3 +439,4 @@ ereadmouse(Mouse *m)
 		eresized(1);
 	return 1;
 }
+#endif

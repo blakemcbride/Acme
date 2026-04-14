@@ -409,7 +409,13 @@ extern	double	p9pow10(int);
 /* extern	void	qsort(void*, long, long, int (*)(void*, void*)); <stdlib.h> */
 extern	char*	searchpath(char*);
 /* extern	int	p9setjmp(p9jmp_buf); */
-#define p9setjmp(b)	sigsetjmp((void*)(b), 1)
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#define p9setjmp(b)	_setjmp(*(jmp_buf*)(b), 0)
+#elif defined(__CYGWIN__) || defined(__MSYS__)
+#define p9setjmp(b)	_setjmp(*(jmp_buf*)(b))
+#else
+#define p9setjmp(b)	sigsetjmp(*(sigjmp_buf*)(b), 1)
+#endif
 /*
  * <stdlib.h>
 extern	long	strtol(char*, char**, int);
@@ -440,12 +446,14 @@ extern	void	(*_unpin)(void);
 #define frexp		p9frexp
 #define getenv		p9getenv
 #define	getwd		p9getwd
+#if !defined(_WIN32) || defined(__CYGWIN__)
 #define	longjmp		p9longjmp
 #undef  setjmp
 #define setjmp		p9setjmp
-#define putenv		p9putenv
 #define notejmp		p9notejmp
 #define jmp_buf		p9jmp_buf
+#endif
+#define putenv		p9putenv
 #define time		p9time
 #define pow10		p9pow10
 #define strtod		fmtstrtod
@@ -552,11 +560,13 @@ extern	char*	p9netmkaddr(char*, char*, char*);
 extern	int	p9reject(int, char*, char*);
 
 #ifndef NOPLAN9DEFINES
+#if !defined(_WIN32) || defined(__CYGWIN__)
 #define	accept		p9accept
+#define	listen		p9listen
+#endif
 #define	announce	p9announce
 #define	dial		p9dial
 #define	setnetmtpt	p9setnetmtpt
-#define	listen		p9listen
 #define	netmkaddr	p9netmkaddr
 #define	reject		p9reject
 #endif

@@ -568,7 +568,7 @@ enum
 };
 
 extern Channel	*cplumb;		/* chan(Plumbmsg*) */
-extern Channel	*cwait;		/* chan(Waitmsg) */
+extern Channel	*cwaitchan;	/* chan(Waitmsg) */
 extern Channel	*ccommand;	/* chan(Command*) */
 extern Channel	*ckill;		/* chan(Rune*) */
 extern Channel	*cxfidalloc;	/* chan(Xfid*) */

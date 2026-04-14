@@ -1,3 +1,4 @@
+#if !defined(_WIN32) || defined(__CYGWIN__)
 #include <u.h>
 #include <libc.h>
 
@@ -157,3 +158,4 @@ Unix:
 	}
 	return s;
 }
+#endif /* !defined(_WIN32) || defined(__CYGWIN__) */

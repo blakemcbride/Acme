@@ -31,7 +31,9 @@ nsinit(char *name)
 	}
 	free(addr);
 
+#if !defined(_WIN32) || defined(__CYGWIN__)
 	fcntl(fd, F_SETFD, FD_CLOEXEC);
+#endif
 	return fsinit(fd);
 }
 

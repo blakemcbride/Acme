@@ -1,3 +1,4 @@
+#if !defined(_WIN32) || defined(__CYGWIN__)
 #include <u.h>
 #define NOPLAN9DEFINES
 #include <libc.h>
@@ -86,3 +87,4 @@ recvfd(int s)
 	memmove(&fd, CMSG_DATA(cmsg), sizeof(int));
 	return fd;
 }
+#endif /* !defined(_WIN32) || defined(__CYGWIN__) */

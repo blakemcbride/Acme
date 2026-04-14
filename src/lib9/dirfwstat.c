@@ -1,8 +1,23 @@
 #define NOPLAN9DEFINES
 #include <u.h>
 #include <libc.h>
+#ifndef _WIN32
 #include <sys/time.h>
+#endif
 #include <sys/stat.h>
+
+#ifdef _WIN32
+
+int
+dirfwstat(int fd, Dir *dir)
+{
+	USED(fd);
+	USED(dir);
+	werrstr("dirfwstat not yet implemented on Windows");
+	return -1;
+}
+
+#else
 
 #if defined(__FreeBSD__) || defined(__APPLE__) || defined(__OpenBSD__) || defined(__linux__)
 /* do nothing -- futimes exists and is fine */
@@ -54,3 +69,5 @@ dirfwstat(int fd, Dir *dir)
 	}
 	return ret;
 }
+
+#endif

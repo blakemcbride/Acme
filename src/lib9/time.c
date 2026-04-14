@@ -1,3 +1,53 @@
+#ifdef _WIN32
+
+#include <u.h>
+#define NOPLAN9DEFINES
+#include <libc.h>
+#include <windows.h>
+
+long
+p9times(long *t)
+{
+	/* stub: no getrusage on Windows */
+	t[0] = 0;
+	t[1] = 0;
+	t[2] = 0;
+	t[3] = 0;
+	return 0;
+}
+
+double
+p9cputime(void)
+{
+	return 0.0;
+}
+
+vlong
+p9nsec(void)
+{
+	FILETIME ft;
+	ULARGE_INTEGER uli;
+
+	GetSystemTimeAsFileTime(&ft);
+	uli.LowPart = ft.dwLowDateTime;
+	uli.HighPart = ft.dwHighDateTime;
+	/* FILETIME is in 100ns units since 1601-01-01 */
+	/* Convert to nanoseconds; epoch difference doesn't matter for relative time */
+	return (vlong)uli.QuadPart * 100;
+}
+
+long
+p9time(long *tt)
+{
+	long t;
+	t = time(0);
+	if(tt)
+		*tt = t;
+	return t;
+}
+
+#else
+
 #include <u.h>
 #include <sys/time.h>
 #include <time.h>
@@ -55,3 +105,5 @@ p9time(long *tt)
 		*tt = t;
 	return t;
 }
+
+#endif

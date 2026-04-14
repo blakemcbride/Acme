@@ -1,3 +1,93 @@
+#ifdef _WIN32
+
+/*
+ * Minimal signal handling for Windows.
+ * Only SIGINT and SIGTERM are supported via signal().
+ */
+
+#include <u.h>
+#include <signal.h>
+#define NOPLAN9DEFINES
+#include <libc.h>
+
+extern char *_p9sigstr(int, char*);
+extern int _p9strsig(char*);
+
+typedef struct Jmp Jmp;
+struct Jmp
+{
+	p9jmp_buf b;
+};
+
+static Jmp onejmp;
+
+static Jmp*
+getonejmp(void)
+{
+	return &onejmp;
+}
+
+Jmp *(*_notejmpbuf)(void) = getonejmp;
+
+static void (*notifyf)(void*, char*);
+
+static void
+signotify(int sig)
+{
+	char tmp[64];
+
+	if(notifyf)
+		(*notifyf)(nil, _p9sigstr(sig, tmp));
+	signal(sig, signotify);
+}
+
+int
+noted(int v)
+{
+	p9longjmp((*_notejmpbuf)()->b, v==NCONT ? 2 : 1);
+	abort();
+	return 0;
+}
+
+int
+notify(void (*f)(void*, char*))
+{
+	notifyf = f;
+	signal(SIGINT, signotify);
+	signal(SIGTERM, signotify);
+	return 0;
+}
+
+int
+noteenable(char *msg)
+{
+	USED(msg);
+	return 0;
+}
+
+int
+notedisable(char *msg)
+{
+	USED(msg);
+	return 0;
+}
+
+int
+notifyon(char *msg)
+{
+	USED(msg);
+	return 0;
+}
+
+int
+notifyoff(char *msg)
+{
+	USED(msg);
+	return 0;
+}
+
+#else
+
 /*
  * Signal handling for Plan 9 programs.
  * We stubbornly use the strings from Plan 9 instead
@@ -270,3 +360,5 @@ noteinit(void)
 		notifyseton(sig->sig, !(sig->flags&NoNotify));
 	}
 }
+
+#endif

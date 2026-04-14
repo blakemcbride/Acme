@@ -1,5 +1,40 @@
 #include <u.h>
 #include <libc.h>
+
+#ifdef _WIN32
+
+#include <windows.h>
+
+char*
+getns(void)
+{
+	char *ns;
+	char localapp[MAX_PATH];
+	char *p;
+
+	ns = getenv("NAMESPACE");
+	if(ns != nil)
+		return ns;
+
+	if(GetEnvironmentVariableA("LOCALAPPDATA", localapp, sizeof localapp) == 0)
+		strecpy(localapp, localapp+sizeof localapp, "C:\\Temp");
+
+	/* Convert backslashes to forward slashes for Plan 9 style */
+	for(p = localapp; *p; p++)
+		if(*p == '\\')
+			*p = '/';
+
+	ns = smprint("%s/ns.%s", localapp, getuser());
+	if(ns == nil){
+		werrstr("out of memory");
+		return nil;
+	}
+	CreateDirectoryA(ns, nil);
+	return ns;
+}
+
+#else
+
 #include <ctype.h>
 
 static int
@@ -100,3 +135,5 @@ getns(void)
 	}
 	return ns;
 }
+
+#endif

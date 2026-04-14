@@ -1,3 +1,4 @@
+#if !defined(_WIN32) || defined(__CYGWIN__)
 #include <u.h>
 #define NOPLAN9DEFINES
 #include <libc.h>
@@ -49,3 +50,4 @@ udpwrite(int fd, Udphdr *hdr, void *buf, long n)
 	*(u16int*)&sin.sin_port = *(u16int*)hdr->rport;
 	return sendto(fd, buf, n, 0, (struct sockaddr*)&sin, sizeof sin);
 }
+#endif /* !defined(_WIN32) || defined(__CYGWIN__) */

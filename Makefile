@@ -1,6 +1,13 @@
 override PLAN9 := $(realpath .)
 export PLAN9
 
+# On MSYS2/Cygwin, pin the MSYS gcc so that installing mingw64-gcc
+# (needed only for the FreeType ABI shim) does not hijack CC.
+ifneq (,$(findstring NT,$(shell uname -s)))
+CC := /usr/bin/gcc
+export CC
+endif
+
 LIBS = lib9 libbio libregexp libthread libmux lib9pclient libauth \
 	libauthsrv libip libndb libsec libmp libcomplete libplumb \
 	libdraw libmemdraw libmemlayer libframe
@@ -24,4 +31,9 @@ clean:
 realclean: clean
 	rm -f lib/*.a
 
-.PHONY: all libs clean realclean
+# Native Windows build: standalone .exe with no Cygwin/MSYS runtime dependency.
+# Uses mingw64 gcc with static linking.
+native-win:
+	$(MAKE) NATIVE_WIN=1 CC=/mingw64/bin/gcc all
+
+.PHONY: all libs clean realclean native-win

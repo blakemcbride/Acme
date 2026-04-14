@@ -263,6 +263,7 @@ openfont(Display *d, char *name)
 	return f;
 }
 
+#if !defined(_WIN32) || defined(__CYGWIN__)
 int
 _fontpipe(char *name)
 {
@@ -309,3 +310,4 @@ _fontpipe(char *name)
 	}
 	return p[0];
 }
+#endif

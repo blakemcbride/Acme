@@ -1,3 +1,4 @@
+#if !defined(_WIN32) || defined(__CYGWIN__)
 #include <u.h>
 #define NOPLAN9DEFINES
 #include <libc.h>
@@ -102,3 +103,4 @@ readcons(char *prompt, char *def, int secret)
 		}
 	}
 }
+#endif /* !defined(_WIN32) || defined(__CYGWIN__) */

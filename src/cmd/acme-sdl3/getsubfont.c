@@ -52,8 +52,15 @@ _getsubfont(Display *d, char *name)
 static int
 defaultpipe(void)
 {
-	int p[2], pid;
-
+	int p[2];
+#if defined(_WIN32) && !defined(__CYGWIN__)
+	if(pipe(p) < 0)
+		return -1;
+	write(p[1], defontdata, sizeof defontdata);
+	close(p[1]);
+	return p[0];
+#else
+	int pid;
 	if(pipe(p) < 0)
 		return -1;
 	if((pid = fork()) < 0) {
@@ -67,7 +74,9 @@ defaultpipe(void)
 		close(p[1]);
 		_exit(0);
 	}
+	close(p[1]);
 	return p[0];
+#endif
 }
 
 static void

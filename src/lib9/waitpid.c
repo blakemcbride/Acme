@@ -1,6 +1,17 @@
 #include <u.h>
 #include <libc.h>
 
+#ifdef _WIN32
+
+int
+waitpid(void)
+{
+	werrstr("waitpid not yet implemented on Windows");
+	return -1;
+}
+
+#else
+
 int
 waitpid(void)
 {
@@ -17,3 +28,5 @@ waitpid(void)
 	}
 	return atoi(fld[0]);
 }
+
+#endif

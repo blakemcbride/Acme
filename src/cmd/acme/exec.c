@@ -3,6 +3,12 @@
 #include <bio.h>
 #include <draw.h>
 #include <thread.h>
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#define DEVNULL "NUL"
+#else
+#define DEVNULL "/dev/null"
+#endif
 #include <cursor.h>
 #include <mouse.h>
 #include <keyboard.h>
@@ -1591,10 +1597,17 @@ runproc(void *argvp)
 	iseditcmd = (uintptr)argv[9];
 	free(argv);
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+	putenv("acmeaddr", "");
+	putenv("winid", "");
+	putenv("%", "");
+	putenv("samfile", "");
+#else
 	unsetenv("acmeaddr");
 	unsetenv("winid");
 	unsetenv("%");
 	unsetenv("samfile");
+#endif
 
 	t = s;
 	while(*t==' ' || *t=='\n' || *t=='\t')
@@ -1655,9 +1668,9 @@ runproc(void *argvp)
 		if(winid>0 && (pipechar=='|' || pipechar=='>')){
 			sfd[0] = pipesel(winid, pipechar=='|');
 			if(sfd[0] < 0)
-				sfd[0] = open("/dev/null", OREAD);
+				sfd[0] = open(DEVNULL, OREAD);
 		}else
-			sfd[0] = open("/dev/null", OREAD);
+			sfd[0] = open(DEVNULL, OREAD);
 		if((winid>0 || iseditcmd) && (pipechar=='|' || pipechar=='<')){
 			if(!iseditcmd)
 				sfd[1] = pipewrsel(winid);
@@ -1671,8 +1684,8 @@ runproc(void *argvp)
 	}else{
 		rfork(RFFDG|RFNOTEG);
 		fsysclose();
-		sfd[0] = open("/dev/null", OREAD);
-		sfd[1] = open("/dev/null", OWRITE);
+		sfd[0] = open(DEVNULL, OREAD);
+		sfd[1] = open(DEVNULL, OWRITE);
 		sfd[2] = dup(erroutfd, -1);
 	}
 	if(win)
@@ -1782,10 +1795,17 @@ Hard:
 	rcarg[2] = t;
 	rcarg[3] = nil;
 	ret = threadspawnd(sfd, rcarg[0], rcarg, dir);
+#if defined(_WIN32) && !defined(__CYGWIN__)
+	putenv("acmeaddr", "");
+	putenv("winid", "");
+	putenv("%", "");
+	putenv("samfile", "");
+#else
 	unsetenv("acmeaddr");
 	unsetenv("winid");
 	unsetenv("%");
 	unsetenv("samfile");
+#endif
 	free(dir);
 	if(ret >= 0){
 		if(cpid)

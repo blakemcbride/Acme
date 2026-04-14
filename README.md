@@ -1,8 +1,8 @@
-# Standalone Acme Editor for Linux
+# Standalone Acme Editor for Linux and Windows
 
 A self-contained build of the [acme](http://acme.cat-v.org) text editor
-that runs on modern Linux systems (X11 or Wayland) with no external
-dependencies on Plan 9 tools or infrastructure.
+that runs on modern Linux (X11 or Wayland) and Windows systems with no
+external dependencies on Plan 9 tools or infrastructure.
 
 ## What is Acme?
 
@@ -90,32 +90,43 @@ The changes, in rough order:
 
 ## Building
 
-### Prerequisites
+The codebase supports three build targets, all from the same source
+tree (platform differences are guarded by `#ifdef`):
 
-- GCC
-- GNU make
-- SDL3 development libraries
-- FreeType and fontconfig development libraries
-- zlib
+### Linux (native)
 
-On Fedora:
-```
-sudo dnf install gcc make SDL3-devel freetype-devel fontconfig-devel zlib-devel
-```
+See `Linux.md` for detailed instructions.
 
-On Ubuntu/Debian:
 ```
-sudo apt install gcc make libsdl3-dev libfreetype-dev libfontconfig-dev zlib1g-dev
+sudo dnf install gcc make SDL3-devel freetype-devel fontconfig-devel zlib-devel  # Fedora
+sudo apt install gcc make libsdl3-dev libfreetype-dev libfontconfig-dev zlib1g-dev  # Debian/Ubuntu
+make
 ```
 
-### Build
+Dynamically linked against system libraries.
+
+### Windows / MSYS2 (POSIX runtime)
+
+See `Windows-MSYS.md` for detailed instructions.  Requires MSYS2 at
+both build and runtime.  Uses the MSYS POSIX layer for fork, exec,
+pipes, and PTY.
 
 ```
 make
 ```
 
-This builds all 18 libraries from source and produces a single binary
-at `bin/acme`.
+### Windows (native, standalone)
+
+See `Windows-native.md`.  Produces a single standalone `acme.exe`
+with no MSYS2 or Cygwin runtime dependency — only Windows system
+DLLs.  Built with mingw64 gcc and statically linked.
+
+```
+make native-win
+```
+
+The resulting `bin/acme.exe` can be copied to any Windows 10/11 machine
+and run with no other files required.
 
 ### Clean
 

@@ -20,7 +20,10 @@ fsopenfd(CFsys *fs, char *name, int mode)
 		return -1;
 	}
 	_fsputfid(fid);
-	if(mode&OCEXEC && rx.unixfd>=0)
+	if(mode&OCEXEC && rx.unixfd>=0){
+#if !defined(_WIN32) || defined(__CYGWIN__)
 		fcntl(rx.unixfd, F_SETFL, FD_CLOEXEC);
+#endif
+	}
 	return rx.unixfd;
 }

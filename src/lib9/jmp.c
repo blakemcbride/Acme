@@ -5,12 +5,24 @@
 void
 p9longjmp(p9jmp_buf buf, int val)
 {
-	siglongjmp((void*)buf, val);
+#if defined(_WIN32)
+	longjmp(*(jmp_buf*)buf, val);
+#elif defined(__CYGWIN__) || defined(__MSYS__)
+	_longjmp(*(jmp_buf*)buf, val);
+#else
+	siglongjmp(*(sigjmp_buf*)buf, val);
+#endif
 }
 
 void
 p9notejmp(void *x, p9jmp_buf buf, int val)
 {
 	USED(x);
-	siglongjmp((void*)buf, val);
+#if defined(_WIN32)
+	longjmp(*(jmp_buf*)buf, val);
+#elif defined(__CYGWIN__) || defined(__MSYS__)
+	_longjmp(*(jmp_buf*)buf, val);
+#else
+	siglongjmp(*(sigjmp_buf*)buf, val);
+#endif
 }

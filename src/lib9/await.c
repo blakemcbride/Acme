@@ -1,3 +1,55 @@
+#ifdef _WIN32
+
+#define NOPLAN9DEFINES
+#include <u.h>
+#include <libc.h>
+
+char*
+_p9sigstr(int sig, char *tmp)
+{
+	if(tmp == nil)
+		return nil;
+	sprint(tmp, "sys: signal %d", sig);
+	return tmp;
+}
+
+int
+_p9strsig(char *s)
+{
+	USED(s);
+	return 0;
+}
+
+int
+await(char *str, int n)
+{
+	USED(str);
+	USED(n);
+	werrstr("await not yet implemented on Windows");
+	return -1;
+}
+
+int
+awaitnohang(char *str, int n)
+{
+	USED(str);
+	USED(n);
+	werrstr("awaitnohang not yet implemented on Windows");
+	return -1;
+}
+
+int
+awaitfor(int pid, char *str, int n)
+{
+	USED(pid);
+	USED(str);
+	USED(n);
+	werrstr("awaitfor not yet implemented on Windows");
+	return -1;
+}
+
+#else
+
 #define NOPLAN9DEFINES
 #include <u.h>
 #include <libc.h>
@@ -134,3 +186,5 @@ awaitfor(int pid, char *str, int n)
 {
 	return _await(pid, str, n, 0);
 }
+
+#endif

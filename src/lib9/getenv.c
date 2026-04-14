@@ -16,5 +16,9 @@ p9getenv(char *s)
 int
 p9putenv(char *s, char *v)
 {
+#if defined(_WIN32) && !defined(__CYGWIN__)
+	return _putenv_s(s, v);
+#else
 	return setenv(s, v, 1);
+#endif
 }

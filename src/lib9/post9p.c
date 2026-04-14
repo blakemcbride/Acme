@@ -1,3 +1,4 @@
+#if !defined(_WIN32) || defined(__CYGWIN__)
 #include <u.h>
 #include <libc.h>
 
@@ -84,3 +85,4 @@ post9pservice(int fd, char *name, char *mtpt)
 	}
 	return 0;
 }
+#endif /* !defined(_WIN32) || defined(__CYGWIN__) */

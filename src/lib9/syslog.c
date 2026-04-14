@@ -1,3 +1,4 @@
+#if !defined(_WIN32) || defined(__CYGWIN__)
 #include <u.h>
 #include <libc.h>
 
@@ -117,3 +118,4 @@ syslog(int cons, char *logname, char *fmt, ...)
 
 	unlock(&sl.lk);
 }
+#endif /* !defined(_WIN32) || defined(__CYGWIN__) */

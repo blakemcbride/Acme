@@ -1,3 +1,4 @@
+#if !defined(_WIN32) || defined(__CYGWIN__)
 /* Copyright (c) 2006 Russ Cox */
 
 #include <u.h>
@@ -488,3 +489,4 @@ canreadfd(int fd)
 		return 1;
 	return 0;
 }
+#endif

@@ -1,7 +1,9 @@
 #include <u.h>
+#ifndef _WIN32
 #include <unistd.h>
 #include <sys/time.h>
 #include <sched.h>
+#endif
 #include <errno.h>
 #include <libc.h>
 

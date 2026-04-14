@@ -1,3 +1,26 @@
+#ifdef _WIN32
+
+#include <u.h>
+#include <libc.h>
+
+int
+p9rfork(int flags)
+{
+	if(flags & RFPROC){
+		werrstr("rfork RFPROC not supported on Windows");
+		return -1;
+	}
+	/* Safe flags: RFFDG, RFENVG, RFNAMEG, RFNOTEG are no-ops */
+	flags &= ~(RFFDG|RFENVG|RFNAMEG|RFNOTEG|RFNOWAIT|RFCENVG);
+	if(flags){
+		werrstr("unknown flags %08ux in rfork", flags);
+		return -1;
+	}
+	return 0;
+}
+
+#else
+
 #include <u.h>
 #include <sys/wait.h>
 #include <signal.h>
@@ -133,3 +156,5 @@ p9rfork(int flags)
 	}
 	return 0;
 }
+
+#endif

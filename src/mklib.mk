@@ -4,8 +4,15 @@
 
 PLAN9 ?= $(realpath ../..)
 UNAME_S := $(shell uname -s)
+ifdef NATIVE_WIN
+CC = /mingw64/bin/gcc
+AR = /mingw64/bin/ar
+else ifneq (,$(findstring NT,$(UNAME_S)))
+CC = /usr/bin/gcc
+else
 CC ?= cc
-AR = ar
+endif
+AR ?= ar
 ARFLAGS = rcs
 
 # GCC-only warning flags (clang does not support these)

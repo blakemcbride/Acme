@@ -53,14 +53,25 @@ _getsubfont(Display *d, char *name)
 static int
 defaultpipe(void)
 {
-	int p[2], pid;
+	int p[2];
 
+	if(pipe(p) < 0)
+		return -1;
+#if defined(_WIN32) && !defined(__CYGWIN__)
+	/*
+	 * On Windows, p9pipe uses _pipe with a 64k buffer,
+	 * large enough for defontdata (<5k), so write directly.
+	 */
+	write(p[1], defontdata, sizeof defontdata);
+	close(p[1]);
+	return p[0];
+#else
+	{
+	int pid;
 	// Used to assume that defontdata (<5k) fit in the
 	// pipe buffer, especially since p9pipe is actually
 	// a socket pair. But OpenBSD in particular saw hangs,
 	// so feed the pipe it the "right" way with a subprocess.
-	if(pipe(p) < 0)
-		return -1;
 	if((pid = fork()) < 0) {
 		close(p[0]);
 		close(p[1]);
@@ -73,6 +84,8 @@ defaultpipe(void)
 		_exit(0);
 	}
 	return p[0];
+	}
+#endif
 }
 
 static void

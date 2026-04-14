@@ -1,6 +1,31 @@
 #include <u.h>
 #include <libc.h>
 
+#ifdef _WIN32
+
+Waitmsg*
+wait(void)
+{
+	werrstr("wait not yet implemented on Windows");
+	return nil;
+}
+
+Waitmsg*
+waitnohang(void)
+{
+	return nil;
+}
+
+Waitmsg*
+waitfor(int pid)
+{
+	USED(pid);
+	werrstr("waitfor not yet implemented on Windows");
+	return nil;
+}
+
+#else
+
 static Waitmsg*
 _wait(int n, char *buf)
 {
@@ -51,3 +76,5 @@ waitfor(int pid)
 
 	return _wait(awaitfor(pid, buf, sizeof buf-1), buf);
 }
+
+#endif

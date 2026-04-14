@@ -3,6 +3,24 @@
 #include <draw.h>
 #include <thread.h>
 #include <cursor.h>
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
+static int
+pread(int fd, void *buf, int n, long off)
+{
+	if(_lseeki64(fd, off, 0) < 0)
+		return -1;
+	return read(fd, buf, n);
+}
+
+static int
+pwrite(int fd, void *buf, int n, long off)
+{
+	if(_lseeki64(fd, off, 0) < 0)
+		return -1;
+	return write(fd, buf, n);
+}
+#endif
 #include <mouse.h>
 #include <keyboard.h>
 #include <frame.h>
@@ -20,7 +38,16 @@ tempfile(void)
 	char buf[128];
 	int i, fd;
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+	{
+		char *tmp = getenv("TEMP");
+		if(tmp == nil) tmp = "C:\\Temp";
+		snprint(buf, sizeof buf, "%s/X%d.%.4sacme", tmp, getpid(), getuser());
+		free(tmp);
+	}
+#else
 	snprint(buf, sizeof buf, "/tmp/X%d.%.4sacme", getpid(), getuser());
+#endif
 	for(i='A'; i<='Z'; i++){
 		buf[5] = i;
 		if(access(buf, AEXIST) == 0)

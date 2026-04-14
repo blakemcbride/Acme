@@ -1,6 +1,8 @@
 #include <lib9.h>
 
+#if !defined(__CYGWIN__) && !defined(__MSYS__) && !defined(_WIN32)
 #pragma weak argv0
+#endif
 char *argv0;
 
 /*

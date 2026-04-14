@@ -1,4 +1,9 @@
 #include <u.h>
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#include "threadimpl.h"
+void _threadsetupdaemonize(void) {}
+void _threaddaemonize(void) {}
+#else
 #include <sys/time.h>
 #include <sys/resource.h>
 #include "threadimpl.h"
@@ -176,3 +181,4 @@ _threaddaemonize(void)
 	close(threadpassfd);
 	threadpassfd = -1;
 }
+#endif /* !_WIN32 */

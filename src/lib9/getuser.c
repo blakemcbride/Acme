@@ -1,3 +1,25 @@
+#ifdef _WIN32
+
+#include <u.h>
+#include <libc.h>
+#include <windows.h>
+
+char*
+getuser(void)
+{
+	static char user[256];
+	DWORD n;
+
+	if(user[0])
+		return user;
+	n = sizeof user;
+	if(!GetUserNameA(user, &n))
+		strecpy(user, user+sizeof user, "none");
+	return user;
+}
+
+#else
+
 #include <u.h>
 #include <pwd.h>
 #include <libc.h>
@@ -14,3 +36,5 @@ getuser(void)
 	strecpy(user, user+sizeof user, pw->pw_name);
 	return user;
 }
+
+#endif

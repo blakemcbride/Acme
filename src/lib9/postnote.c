@@ -1,3 +1,21 @@
+#ifdef _WIN32
+
+#include <u.h>
+#define NOPLAN9DEFINES
+#include <libc.h>
+
+int
+postnote(int who, int pid, char *msg)
+{
+	USED(who);
+	USED(pid);
+	USED(msg);
+	werrstr("postnote not yet implemented on Windows");
+	return -1;
+}
+
+#else
+
 #include <u.h>
 #define NOPLAN9DEFINES
 #include <libc.h>
@@ -35,3 +53,5 @@ postnote(int who, int pid, char *msg)
 		return killpg(pid, sig);
 	}
 }
+
+#endif

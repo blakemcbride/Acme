@@ -11,7 +11,11 @@
 PLAN9 ?= $(realpath ../../..)
 UNAME_S := $(shell uname -s)
 
+ifneq (,$(findstring NT,$(UNAME_S)))
+CC = /usr/bin/gcc
+else
 CC ?= cc
+endif
 
 # GCC-only warning flags (clang does not support these)
 GCC_WARN_FLAGS = \
@@ -31,14 +35,17 @@ FONTCONFIG_LDFLAGS := $(shell pkg-config --libs fontconfig 2>/dev/null || echo "
 PLATFORM_WARN_FLAGS =
 PLATFORM_LDFLAGS = -lm -lpthread -framework CoreFoundation
 else ifneq (,$(findstring NT,$(UNAME_S)))
-FREETYPE_CFLAGS := $(shell pkg-config --cflags freetype2 2>/dev/null)
+# Use -idirafter so mingw64 headers don't shadow MSYS system headers.
+# -idirafter is searched AFTER standard system includes, so
+# /usr/include/pthread.h is found before /mingw64/include/pthread.h.
+FREETYPE_CFLAGS := $(subst -I,-idirafter ,$(shell pkg-config --cflags freetype2 2>/dev/null))
 FREETYPE_LDFLAGS := $(shell pkg-config --libs freetype2 2>/dev/null || echo "-lfreetype")
-SDL3_CFLAGS := $(shell pkg-config --cflags sdl3 2>/dev/null)
+SDL3_CFLAGS := $(subst -I,-idirafter ,$(shell pkg-config --cflags sdl3 2>/dev/null))
 SDL3_LDFLAGS := $(shell pkg-config --libs sdl3 2>/dev/null || echo "-lSDL3")
-FONTCONFIG_CFLAGS := $(shell pkg-config --cflags fontconfig 2>/dev/null)
+FONTCONFIG_CFLAGS := $(subst -I,-idirafter ,$(shell pkg-config --cflags fontconfig 2>/dev/null))
 FONTCONFIG_LDFLAGS := $(shell pkg-config --libs fontconfig 2>/dev/null || echo "-lfontconfig")
 PLATFORM_WARN_FLAGS = $(GCC_WARN_FLAGS)
-PLATFORM_LDFLAGS = -lm -lpthread -lws2_32
+PLATFORM_LDFLAGS = -lm -lws2_32
 else
 FREETYPE_CFLAGS = -I/usr/include/freetype2
 FREETYPE_LDFLAGS = -lfreetype
@@ -71,12 +78,32 @@ CFLAGS = -O2 -c \
 	-std=gnu11 \
 	-ggdb
 
+ifdef NATIVE_WIN
+# Static linking: standalone .exe with no DLL dependencies beyond
+# Windows system DLLs.  Lists all transitive deps explicitly.
+LDFLAGS = -static -L$(PLAN9)/lib -L/mingw64/lib \
+	-lsec -lauth -lauthsrv -lmemdraw -lndb -lplumb \
+	-lmemlayer -lframe -ldraw -l9pclient -lip -lmp -lmux \
+	-lthread -lregexp9 -lcomplete -lbio -l9 -lthread -l9 -lsec -l9 \
+	-lSDL3 -lfontconfig -lfreetype \
+	-lharfbuzz -lgraphite2 -lglib-2.0 \
+	-lexpat -lbrotlidec -lbrotlicommon -lbz2 -lpng16 -lz -lintl -liconv \
+	-lpcre2-8 \
+	-lm -lpthread -lstdc++ \
+	-lkernel32 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 \
+	-lversion -luuid -ladvapi32 -lsetupapi -lshell32 -ldinput8 \
+	-lusp10 -lrpcrt4 -ldwrite -lws2_32 \
+	-mwindows -static-libgcc -static-libstdc++
+else
+SDL3_LDFLAGS_FIXED := $(SDL3_LDFLAGS)
+
 LDFLAGS = -L$(PLAN9)/lib \
-	$(SDL3_LDFLAGS) $(FONTCONFIG_LDFLAGS) $(FREETYPE_LDFLAGS) -lz \
+	$(SDL3_LDFLAGS_FIXED) $(FONTCONFIG_LDFLAGS) $(FREETYPE_LDFLAGS) -lz \
 	-lsec -lauth -lauthsrv -lmemdraw -lndb -lplumb \
 	-lmemlayer -lframe -ldraw -l9pclient -lip -lmp -lmux \
 	-lthread -lregexp9 -lcomplete -lbio -l9 -lthread -l9 -lsec -l9 \
 	$(PLATFORM_LDFLAGS)
+endif
 
 TARGET = $(PLAN9)/bin/acme
 
@@ -105,12 +132,35 @@ ACME_OBJ = $(ACME_SRC:.c=.o)
 DEVDRAW_OBJ = $(DEVDRAW_SRC:.c=.o)
 FONTSRV_OBJ = fontsrv-x11.o pjw.o
 
+# On MSYS/Cygwin, FreeType struct layout differs (LP64 vs LLP64).
+# ft-shim.o is compiled with mingw64 gcc so it sees the correct ABI.
+ifneq (,$(findstring NT,$(UNAME_S)))
+FONTSRV_OBJ += ft-shim.o
+endif
+
 OBJS = $(LOCAL_OBJ) $(ACME_OBJ) $(DEVDRAW_OBJ) $(FONTSRV_OBJ)
 
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
+	@mkdir -p $(dir $@)
 	$(CC) -o $@ $(OBJS) $(LDFLAGS)
+
+# latin1.h is generated from lib/keyboard by the host tool mklatinkbd.
+# The repo ships a prebuilt Linux ELF mklatinkbd binary in $(DEVDRAW),
+# which is unusable on macOS/Windows, so we always build a fresh host
+# binary here from mklatinkbd.c.
+MKLATINKBD = mklatinkbd-host
+KEYBOARD = $(PLAN9)/lib/keyboard
+
+$(MKLATINKBD): $(DEVDRAW)/mklatinkbd.c
+	$(CC) -O2 -I$(PLAN9)/include -o $@ $< \
+		-L$(PLAN9)/lib -lbio -l9 $(PLATFORM_LDFLAGS)
+
+$(DEVDRAW)/latin1.h: $(MKLATINKBD) $(KEYBOARD)
+	./$(MKLATINKBD) -r $(KEYBOARD) | sed 's/, }/ }/' > $@
+
+latin1.o: $(DEVDRAW)/latin1.h
 
 # Local sources with special include paths
 look.o: look.c
@@ -165,7 +215,11 @@ fontsrv-x11.o: $(FONTSRV)/x11.c
 pjw.o: $(FONTSRV)/pjw.c
 	$(CC) $(CFLAGS) -I$(FONTSRV) $(FONTSRV)/pjw.c
 
+# FreeType ABI shim — compiled with mingw64 gcc for correct struct layout
+ft-shim.o: $(FONTSRV)/ft-shim.c $(FONTSRV)/ft-shim.h
+	/mingw64/bin/gcc -O2 -c $(FREETYPE_CFLAGS) -I$(FONTSRV) -o $@ $<
+
 clean:
-	rm -f *.o
+	rm -f *.o $(MKLATINKBD) $(DEVDRAW)/latin1.h
 
 .PHONY: all clean

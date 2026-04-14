@@ -166,7 +166,6 @@ writesubfontfile(Fontarg *a)
 		write(a->fd, info, 6*(sf->n+1));
 		free(info);
 	}
-
 	freememimage(sf->bits);
 	free(sf->info);
 	free(sf);

@@ -133,7 +133,7 @@ _freememimage(Memimage *i)
 u32int*
 wordaddr(Memimage *i, Point p)
 {
-	return (u32int*) ((ulong)byteaddr(i, p) & ~(sizeof(u32int)-1));
+	return (u32int*) ((uintptr)byteaddr(i, p) & ~(sizeof(u32int)-1));
 }
 
 uchar*

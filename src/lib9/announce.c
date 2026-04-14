@@ -1,3 +1,4 @@
+#if !defined(_WIN32) || defined(__CYGWIN__)
 #include <u.h>
 #define NOPLAN9DEFINES
 #include <libc.h>
@@ -153,3 +154,4 @@ p9accept(int cfd, char *dir)
 	/* need to dup because the listen fd will be closed */
 	return dup(fd);
 }
+#endif /* !defined(_WIN32) || defined(__CYGWIN__) */

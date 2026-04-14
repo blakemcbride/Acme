@@ -1,3 +1,16 @@
+#ifdef _WIN32
+
+#include <u.h>
+#include <libc.h>
+
+int
+p9fork(void)
+{
+	return -1;
+}
+
+#else
+
 #include <u.h>
 #include <signal.h>
 #include <libc.h>
@@ -20,3 +33,5 @@ p9fork(void)
 	sigprocmask(SIG_SETMASK, &old, nil);
 	return pid;
 }
+
+#endif

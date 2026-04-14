@@ -1,3 +1,4 @@
+#if !defined(_WIN32) || defined(__CYGWIN__)
 #include <u.h>
 #define NOPLAN9DEFINES
 #include <libc.h>
@@ -183,3 +184,4 @@ p9dialparse(char *addr, char **pnet, char **punix, void *phost, int *pport)
 	werrstr("unknown service %s!*!%s", net, port);
 	return -1;
 }
+#endif /* !defined(_WIN32) || defined(__CYGWIN__) */

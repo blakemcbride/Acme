@@ -90,6 +90,13 @@ _string(Image *dst, Point pt, Image *src, Point sp, Font *f, char *s, Rune *r, i
 		if(len < max)
 			max = len;
 		n = cachechars(f, sptr, rptr, cbuf, max, &wid, &subfontname);
+		if(n <= 0 && subfontname == nil){
+			/* cachechars wants us to flush pending output and retry */
+			flushimage(dst->display, 0);
+			n = cachechars(f, sptr, rptr, cbuf, max, &wid, &subfontname);
+			if(n <= 0 && subfontname == nil)
+				break;	/* give up to avoid infinite loop */
+		}
 		if(n > 0){
 			_setdrawop(dst->display, op);
 
@@ -98,7 +105,7 @@ _string(Image *dst, Point pt, Image *src, Point sp, Font *f, char *s, Rune *r, i
 				m += 4+2*4;
 			b = bufimage(dst->display, m);
 			if(b == 0){
-				fprint(2, "string: %r\n");
+				fprint(2, "string: bufimage(%d) failed: %r\n", m);
 				break;
 			}
 			if(bg)

@@ -1,6 +1,24 @@
 #include <u.h>
 #include <libc.h>
 
+#ifdef _WIN32
+
+#include <io.h>
+#include <fcntl.h>
+
+int
+opentemp(char *template, int mode)
+{
+	int fd;
+
+	if(_mktemp(template) == nil)
+		return -1;
+	fd = _open(template, mode|O_CREAT|O_EXCL|_O_BINARY, 0600);
+	return fd;
+}
+
+#else
+
 int
 opentemp(char *template, int mode)
 {
@@ -17,3 +35,5 @@ opentemp(char *template, int mode)
 	close(fd);
 	return fd1;
 }
+
+#endif

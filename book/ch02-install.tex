@@ -113,35 +113,73 @@ for extended use.  See Chapter~\ref{ch:mouse} for details.
 
 \index{installation!Windows}
 
-Acme on Windows uses MSYS2, which provides the POSIX compatibility
-layer needed for fork, exec, pipes, and PTY support.
+Acme on Windows can be built two ways:
+
+\begin{itemize}
+\item \textbf{MSYS2 build} — uses the MSYS2 POSIX compatibility layer.
+  Easier to build but requires MSYS2 installed at runtime.
+\item \textbf{Native standalone build} — produces a single
+  \file{acme.exe} that runs on any Windows~10 or later machine with
+  no other files required.
+\end{itemize}
+
+Both builds require MSYS2 at \emph{build} time for the toolchain.
 
 \subsection{Prerequisites}
 
 \begin{enumerate}
 \item Install MSYS2 from \url{https://www.msys2.org/}.
-\item Open the \textbf{MSYS2 MSYS} shell (not MINGW64 or UCRT64).
+\item Open any MSYS2 shell from the Start menu (MSYS, MINGW64, or
+      UCRT64 — the build system pins the right compilers automatically).
 \item Install dependencies:
 \end{enumerate}
 
 \begin{lstlisting}[language=bash]
 pacman -Syu
-pacman -S gcc make pkg-config
-pacman -S libSDL3-devel libfontconfig-devel \
-          libfreetype-devel zlib-devel
+pacman -S git gcc make pkg-config zlib-devel
+pacman -S mingw-w64-x86_64-gcc \
+          mingw-w64-x86_64-sdl3 \
+          mingw-w64-x86_64-fontconfig \
+          mingw-w64-x86_64-freetype
 \end{lstlisting}
 
-\subsection{Building and Running}
+\subsection{Building (MSYS2 build)}
 
-From the MSYS2 MSYS shell:
+From any MSYS2 shell:
 
 \begin{lstlisting}[language=bash]
+export PKG_CONFIG_PATH=/mingw64/lib/pkgconfig
+export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
+export PKG_CONFIG_ALLOW_SYSTEM_LIBS=1
 make
 ./bin/acme
 \end{lstlisting}
 
-The binary depends on the MSYS2 runtime (\file{msys-2.0.dll}).  It must
-be run from an MSYS2 environment or with the MSYS2 DLLs in the PATH.
+The binary depends on the MSYS2 runtime (\file{msys-2.0.dll}) and
+mingw64 DLLs.  It must be run from an MSYS2 environment or with
+those DLLs in the PATH.
+
+See \file{Windows-MSYS.md} in the source tree for full details.
+
+\subsection{Building (native standalone)}
+
+From any MSYS2 shell:
+
+\begin{lstlisting}[language=bash]
+make native-win
+\end{lstlisting}
+
+This produces \file{bin/acme.exe} (approximately 13~MB), statically
+linked with no MSYS2 or Cygwin runtime dependency.  Copy
+\file{acme.exe} to any Windows~10 or later machine and run it
+directly --- no installation, no other files required.
+
+The default font is Consolas, included with Windows.  Fonts are
+discovered automatically from \file{C:\textbackslash Windows\textbackslash Fonts}.
+The \cmd{Win} command opens an interactive \cmd{cmd.exe} session
+inside an acme window using the Windows ConPTY API.
+
+See \file{Windows-native.md} for full details.
 
 \subsection{Mouse on Windows}
 

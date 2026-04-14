@@ -230,6 +230,14 @@ plumb_init(void)
 
 	plumb_user = getuser();
 	plumb_home = getenv("HOME");
+#if defined(_WIN32) && !defined(__CYGWIN__)
+	if(plumb_home == nil)
+		plumb_home = getenv("USERPROFILE");
+	if(plumb_home == nil)
+		plumb_home = "C:";
+	if(plumb_user == nil)
+		plumb_user = "user";
+#endif
 	if(plumb_user==nil || plumb_home==nil){
 		fprint(2, "plumber: can't initialize $user or $home: %r\n");
 		return -1;

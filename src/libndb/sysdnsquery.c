@@ -1,3 +1,4 @@
+#if !defined(_WIN32) || defined(__CYGWIN__)
 #include <u.h>
 #include <netinet/in.h>
 #include <arpa/nameser.h>
@@ -444,3 +445,4 @@ rrunpack(uchar *buf, uchar *ebuf, uchar **pp, char *fmt, ...)
 	*pp = p;
 	return first;
 }
+#endif

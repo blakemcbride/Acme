@@ -46,7 +46,7 @@ int			globalautoindent;
 int			dodollarsigns;
 
 Channel	*cplumb;		/* chan(Plumbmsg*) */
-Channel	*cwait;		/* chan(Waitmsg) */
+Channel	*cwaitchan;	/* chan(Waitmsg) */
 Channel	*ccommand;	/* chan(Command*) */
 Channel	*ckill;		/* chan(Rune*) */
 Channel	*cxfidalloc;	/* chan(Xfid*) */

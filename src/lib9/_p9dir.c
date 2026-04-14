@@ -1,3 +1,4 @@
+#if !defined(_WIN32) || defined(__CYGWIN__)
 #include <u.h>
 #define NOPLAN9DEFINES
 #include <libc.h>
@@ -238,3 +239,7 @@ _p9dir(struct stat *lst, struct stat *st, char *name, Dir *d, char **str, char *
 
 	return sz;
 }
+#else
+/* Provide the symbol on native Windows even though _p9dir is stubbed */
+int _p9usepwlibrary = 0;
+#endif /* !defined(_WIN32) || defined(__CYGWIN__) */
