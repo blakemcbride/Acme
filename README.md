@@ -23,7 +23,7 @@ variable, and X11 for graphics.
 
 ## What Changed
 
-All of the coding in this repository was done by
+All of the modifications in this repository were done by
 [Claude Code](https://claude.ai/claude-code) (Anthropic's AI coding
 agent), with direction and guidance from
 [Blake McBride](https://github.com/blakemcbride).
