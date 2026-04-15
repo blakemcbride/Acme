@@ -128,6 +128,10 @@ make native-win
 The resulting `bin/acme.exe` can be copied to any Windows 10/11 machine
 and run with no other files required.
 
+A pre-compiled Windows binary is available at
+[https://blakemcbride.com/files/acme.exe](https://blakemcbride.com/files/acme.exe).
+Download it and run directly — no installation or dependencies needed.
+
 ### Clean
 
 ```
