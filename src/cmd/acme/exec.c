@@ -480,6 +480,23 @@ undo(Text *et, Text *_0, Text *_1, int flag1, int _2, Rune *_3, int _4)
 	}
 }
 
+/*
+ * Expand a leading ~ or ~/ to $HOME for file I/O. Returns s unchanged when no
+ * expansion applies, or a freshly allocated string that replaces s (in which
+ * case the original is freed). Callers free the returned string.
+ */
+char*
+expandtilde(char *s)
+{
+	char *ns;
+
+	if(s == nil || s[0] != '~' || (s[1] != '/' && s[1] != '\0') || home == nil)
+		return s;
+	ns = smprint("%s%s", home, s+1);
+	free(s);
+	return ns;
+}
+
 char*
 getname(Text *t, Text *argt, Rune *arg, int narg, int isput)
 {
@@ -511,27 +528,6 @@ getname(Text *t, Text *argt, Rune *arg, int narg, int isput)
 		n = narg;
 		if(n <= 0){
 			s = runetobyte(t->file->name, t->file->nname);
-			if(s != nil && s[0] == '~' && (s[1] == '/' || s[1] == '\0') && home != nil){
-				char *ns;
-				ns = smprint("%s%s", home, s+1);
-				free(s);
-				s = ns;
-			}
-			return s;
-		}
-		/* expand ~/... to $HOME/... */
-		if(n>0 && arg[0]=='~' && (n==1 || arg[1]=='/') && home!=nil){
-			Rune *hr, *expanded;
-			int hn;
-			hr = bytetorune(home, &hn);
-			expanded = runemalloc(hn+n);
-			runemove(expanded, hr, hn);
-			runemove(expanded+hn, arg+1, n-1);
-			free(hr);
-			r = expanded;
-			n = hn+n-1;
-			s = runetobyte(r, n);
-			free(r);
 			return s;
 		}
 		/* prefix with directory name if necessary */
@@ -563,13 +559,6 @@ getname(Text *t, Text *argt, Rune *arg, int narg, int isput)
 	if(strlen(s) == 0){
 		free(s);
 		s = nil;
-	}
-	/* expand ~/... to $HOME/... */
-	if(s != nil && s[0] == '~' && (s[1] == '/' || s[1] == '\0') && home != nil){
-		char *ns;
-		ns = smprint("%s%s", home, s+1);
-		free(s);
-		s = ns;
 	}
 	return s;
 }
@@ -647,12 +636,17 @@ get(Text *et, Text *t, Text *argt, int flag1, int _0, Rune *arg, int narg)
 		warning(nil, "no file name\n");
 		return;
 	}
+	r = bytetorune(name, &n);
+	samename = runeeq(r, n, t->file->name, t->file->nname);
+	name = expandtilde(name);
 	if(t->file->ntext>1){
 		d = dirstat(name);
 		isdir = (d!=nil && (d->qid.type & QTDIR));
 		free(d);
 		if(isdir){
 			warning(nil, "%s is a directory; can't read with multiple windows on it\n", name);
+			free(name);
+			free(r);
 			return;
 		}
 	}
@@ -664,14 +658,12 @@ get(Text *et, Text *t, Text *argt, int flag1, int _0, Rune *arg, int narg)
 		a->lq0 = nlcount(u, 0, u->q0, &a->rq0);
 		a->lq1 = nlcount(u, u->q0, u->q1, &a->rq1);
 	}
-	r = bytetorune(name, &n);
 	for(i=0; i<t->file->ntext; i++){
 		u = t->file->text[i];
 		/* second and subsequent calls with zero an already empty buffer, but OK */
 		textreset(u);
 		windirfree(u->w);
 	}
-	samename = runeeq(r, n, t->file->name, t->file->nname);
 	textload(t, 0, name, samename);
 	if(samename){
 		t->file->mod = FALSE;
@@ -743,7 +735,7 @@ putfile(File *f, int q0, int q1, Rune *namer, int nname)
 	DigestState *h;
 
 	w = f->curtext->w;
-	name = runetobyte(namer, nname);
+	name = expandtilde(runetobyte(namer, nname));
 	d = dirstat(name);
 	if(d!=nil && runeeq(namer, nname, f->name, f->nname)){
 		if(f->dev!=d->dev || f->qidpath!=d->qid.path || f->mtime != d->mtime)
