@@ -36,10 +36,15 @@ static void	kputc(Client*, int);
 /*
  * Signal that SDL3 has initialized.
  * Called from sdl3-screen.c gfx_main after SDL_Init succeeds.
+ *
+ * Since gfx_main runs on the OS main thread and may reach this
+ * function before _displayconnect runs on the worker proc, set the
+ * Rendez lock pointer here too (idempotent pointer assignment).
  */
 void
 gfx_started(void)
 {
+	bridge_sdl3readywait.l = &bridge_sdl3readylk;
 	qlock(&bridge_sdl3readylk);
 	bridge_sdl3ready = 1;
 	rwakeup(&bridge_sdl3readywait);

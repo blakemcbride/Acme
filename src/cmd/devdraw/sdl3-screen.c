@@ -22,12 +22,30 @@
 #include "devdraw.h"
 
 /*
- * SDL3 headers conflict with Plan 9 nil macro.
- * Temporarily undefine it around the include.
+ * SDL3 headers conflict with Plan 9 macros from libc.h. The collision
+ * with `nil` causes a real syntax error; the collisions with
+ * `malloc`/`calloc`/`realloc`/`strdup` mangle GCC's __attribute__((malloc))
+ * into __attribute__((p9malloc)) and produce a flood of "unknown
+ * attribute" warnings. Undefine all of them around the include.
+ *
+ * sdl3-screen.c does not call malloc/free directly anyway — Plan 9
+ * code uses smprint/emalloc/free from libc.h, which are not affected
+ * by the plain libc names being undefined within this translation
+ * unit (libc.h has already been preprocessed).
  */
 #undef nil
+#undef malloc
+#undef calloc
+#undef realloc
+#undef free
+#undef strdup
 #include <SDL3/SDL.h>
 #define nil ((void*)0)
+#define malloc  p9malloc
+#define calloc  p9calloc
+#define realloc p9realloc
+#define free    p9free
+#define strdup  p9strdup
 
 typedef struct Sdlwin Sdlwin;
 
@@ -717,6 +735,30 @@ gfx_main(void)
 
 	SDL_Quit();
 	sysfatal("sdl event loop exited");
+}
+
+/*
+ * Install the platform-main-loop hook so libthread runs gfx_main on
+ * the OS main thread. macOS Cocoa requires this; on Linux/Windows it
+ * matches SDL's recommendation and avoids subtle bugs.
+ *
+ * The constructor runs before main(), so the hook is in place by the
+ * time libthread's main() consults it.
+ */
+extern void (*_threadmainloop)(void *);
+
+static void
+gfx_main_threadfn(void *v)
+{
+	USED(v);
+	gfx_main();
+}
+
+__attribute__((constructor))
+static void
+install_gfx_mainloop_hook(void)
+{
+	_threadmainloop = gfx_main_threadfn;
 }
 
 /*

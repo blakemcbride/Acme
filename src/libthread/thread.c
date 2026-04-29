@@ -718,10 +718,21 @@ threadmainstart(void *v)
 
 extern void (*_sysfatal)(char*, va_list);
 
+/*
+ * Optional hook: if non-nil, libthread runs threadmain's procmain on
+ * a worker pthread and runs this function as a libthread thread on the
+ * OS main thread. Used by GUI backends (SDL3, Cocoa) that require their
+ * event loop to own the OS main thread on macOS/Windows/Linux.
+ *
+ * The hook is invoked as a libthread thread, so it may use qlock,
+ * rsleep, rwakeup, etc. It is expected not to return.
+ */
+void (*_threadmainloop)(void *);
+
 int
 main(int argc, char **argv)
 {
-	Proc *p;
+	Proc *p, *gp;
 	_Thread *t;
 	char *opts;
 
@@ -758,10 +769,34 @@ main(int argc, char **argv)
 	_pthreadinit();
 	p = procalloc();
 	p->mainproc = 1;
-	_threadsetproc(p);
 	if(mainstacksize == 0)
 		mainstacksize = 256*1024;
 	atnotify(threadinfo, 1);
+
+	if(_threadmainloop != nil){
+		/*
+		 * Run threadmain's procmain on a worker pthread, run the
+		 * platform main-thread loop on this (the OS main) thread.
+		 * Required on macOS for SDL/Cocoa video init; harmless and
+		 * recommended on Windows and Linux too.
+		 *
+		 * Do NOT call _threadsetproc(p) on this thread: p will be
+		 * owned by the worker pthread (set inside _procstart's
+		 * startprocfn). procmain(gp) below will set this thread's
+		 * proc to gp.
+		 */
+		gp = procalloc();
+		_threadcreate(gp, _threadmainloop, nil, 256*1024);
+		t = _threadcreate(p, threadmainstart, nil, mainstacksize);
+		t->mainthread = 1;
+		_procstart(p, procmain);
+		procmain(gp);
+		sysfatal("main-loop procmain returned in libthread");
+		return 0;
+	}
+
+	/* Unset-hook path: identical to original libthread behavior. */
+	_threadsetproc(p);
 	t = _threadcreate(p, threadmainstart, nil, mainstacksize);
 	t->mainthread = 1;
 	procmain(p);

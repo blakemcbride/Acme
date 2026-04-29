@@ -33,13 +33,6 @@ Rendez bridge_sdl3readywait;
 Rendez bridge_mouserdz;
 Rendez bridge_kbdrdz;
 
-static void
-sdl3proc(void *v)
-{
-	USED(v);
-	gfx_main();
-}
-
 int
 _displayconnect(Display *d)
 {
@@ -60,12 +53,18 @@ _displayconnect(Display *d)
 	/* Set up event synchronization */
 	bridge_mouserdz.l = &client0->eventlk;
 	bridge_kbdrdz.l = &client0->eventlk;
+	/*
+	 * bridge_sdl3readywait.l is also set in gfx_started (idempotent),
+	 * because gfx_main runs on the OS main thread and may reach
+	 * gfx_started before _displayconnect runs on the worker.
+	 */
 	bridge_sdl3readywait.l = &bridge_sdl3readylk;
 
-	/* Spawn SDL3 event loop in a new proc */
-	proccreate(sdl3proc, nil, 256*1024);
-
-	/* Wait for SDL3 initialization to complete */
+	/*
+	 * gfx_main runs on the OS main thread, started by libthread's
+	 * main() via the _threadmainloop hook installed by sdl3-screen.c.
+	 * We just wait for it to signal readiness.
+	 */
 	qlock(&bridge_sdl3readylk);
 	while(!bridge_sdl3ready)
 		rsleep(&bridge_sdl3readywait);

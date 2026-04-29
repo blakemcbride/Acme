@@ -100,7 +100,12 @@ p9dial(char *addr, char *local, char *dummy2, int *dummy3)
 			close(s);
 			return -1;
 		}
-		if(p9dialparse(buf, &net, &unix, &ss, &port) < 0){
+		/*
+		 * Parse local into ssl, NOT ss. Pre-fix this clobbered ss
+		 * (the remote address used by connect() below) and left ssl
+		 * uninitialized for the bind() call.
+		 */
+		if(p9dialparse(buf, &net, &unix, &ssl, &port) < 0){
 		badlocal:
 			free(buf);
 			close(s);

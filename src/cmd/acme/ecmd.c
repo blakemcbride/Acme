@@ -448,7 +448,7 @@ int
 s_cmd(Text *t, Cmd *cp)
 {
 	int i, j, k, c, m, n, nrp, didsub;
-	long p1, op, delta;
+	long p1, op;
 	String *buf;
 	Rangeset *rp;
 	char *err;
@@ -460,7 +460,6 @@ s_cmd(Text *t, Cmd *cp)
 		editerror("bad regexp in s command");
 	nrp = 0;
 	rp = nil;
-	delta = 0;
 	didsub = FALSE;
 	for(p1 = addr.r.q0; p1<=addr.r.q1 && rxexecute(t, nil, p1, addr.r.q1, &sel); ){
 		if(sel.r[0].q0 == sel.r[0].q1){	/* empty match? */
@@ -510,8 +509,6 @@ s_cmd(Text *t, Cmd *cp)
 					Straddc(buf, rbuf[k]);
 			}
 		elogreplace(t->file, sel.r[0].q0, sel.r[0].q1,  buf->r, buf->n);
-		delta -= sel.r[0].q1-sel.r[0].q0;
-		delta += buf->n;
 		didsub = 1;
 		if(!cp->flag)
 			break;

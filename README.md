@@ -1,8 +1,8 @@
-# Standalone Acme Editor for Linux and Windows
+# Standalone Acme Editor for Linux, macOS, and Windows
 
 A self-contained build of the [acme](http://acme.cat-v.org) text editor
-that runs on modern Linux (X11 or Wayland) and Windows systems with no
-external dependencies on Plan 9 tools or infrastructure.
+that runs on modern Linux (X11 or Wayland), macOS, and Windows systems
+with no external dependencies on Plan 9 tools or infrastructure.
 
 ## What is Acme?
 
@@ -90,7 +90,7 @@ The changes, in rough order:
 
 ## Building
 
-The codebase supports three build targets, all from the same source
+The codebase supports four build targets, all from the same source
 tree (platform differences are guarded by `#ifdef`):
 
 ### Linux (native)
@@ -104,6 +104,19 @@ make
 ```
 
 Dynamically linked against system libraries.
+
+### macOS
+
+See `macOS.md` for detailed instructions.
+
+```
+brew install sdl3 fontconfig freetype pkg-config
+make
+```
+
+Uses the SDL3 backend for native macOS window management (no X11 or
+XQuartz required).  Ctrl-click and Alt-click emulate the middle and
+right mouse buttons for users without a three-button mouse.
 
 ### Windows / MSYS2 (POSIX runtime)
 
