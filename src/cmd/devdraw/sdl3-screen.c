@@ -21,6 +21,10 @@
 #include <thread.h>
 #include "devdraw.h"
 
+#if !defined(_WIN32) || defined(__CYGWIN__)
+#include <dlfcn.h>
+#endif
+
 /*
  * SDL3 headers conflict with Plan 9 macros from libc.h. The collision
  * with `nil` causes a real syntax error; the collisions with
@@ -236,7 +240,19 @@ sdlattach(Client *client, char *label, char *winsize)
 	if(w->win == nil)
 		sysfatal("SDL_CreateWindow: %s", SDL_GetError());
 
+	/*
+	 * Try the default renderer first (typically OpenGL/Vulkan). If
+	 * it fails — common on systems with broken hardware GL — fall
+	 * back to the software renderer. Software is sufficient: all
+	 * drawing happens in memdraw, and the renderer only uploads the
+	 * finished image to a texture and presents it.
+	 */
 	w->renderer = SDL_CreateRenderer(w->win, nil);
+	if(w->renderer == nil) {
+		fprint(2, "sdl3: default renderer failed (%s); using software\n",
+			SDL_GetError());
+		w->renderer = SDL_CreateRenderer(w->win, "software");
+	}
 	if(w->renderer == nil)
 		sysfatal("SDL_CreateRenderer: %s", SDL_GetError());
 
@@ -700,6 +716,45 @@ sdlloop(void)
 	}
 }
 
+/*
+ * Install a no-op X11 error handler so GLX/X protocol failures don't
+ * terminate the program. Xlib's default handler calls exit() on
+ * unhandled protocol errors, which on systems with broken hardware
+ * OpenGL kills acme before SDL's renderer fallback can take over.
+ *
+ * Done via dlsym so we don't pull in a compile-time X11 dependency:
+ * if libX11 isn't loaded (Wayland-only, macOS, Windows), there's no
+ * Xlib error path to worry about and we silently skip.
+ */
+#if !defined(_WIN32) || defined(__CYGWIN__)
+static int
+ignore_x_error(void *display, void *event)
+{
+	USED(display);
+	USED(event);
+	return 0;
+}
+
+static void
+install_x_error_handler(void)
+{
+	void *handle;
+	void *(*setHandler)(int (*)(void *, void *));
+
+	handle = dlopen("libX11.so.6", RTLD_LAZY | RTLD_NOLOAD);
+	if(handle == nil)
+		return;
+	setHandler = (void *(*)(int (*)(void *, void *)))dlsym(handle, "XSetErrorHandler");
+	if(setHandler != nil)
+		setHandler(ignore_x_error);
+}
+#else
+static void
+install_x_error_handler(void)
+{
+}
+#endif
+
 void
 gfx_main(void)
 {
@@ -721,6 +776,8 @@ gfx_main(void)
 		dup(saved_stderr, 2);
 		close(saved_stderr);
 	}
+
+	install_x_error_handler();
 
 	flushevent = SDL_RegisterEvents(3);
 	if(flushevent == 0)

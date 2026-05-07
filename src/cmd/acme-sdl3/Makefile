@@ -54,7 +54,7 @@ SDL3_LDFLAGS = -lSDL3
 FONTCONFIG_CFLAGS =
 FONTCONFIG_LDFLAGS = -lfontconfig
 PLATFORM_WARN_FLAGS = $(GCC_WARN_FLAGS)
-PLATFORM_LDFLAGS = -lm -lutil -lresolv -lpthread
+PLATFORM_LDFLAGS = -lm -lutil -lresolv -lpthread -ldl
 endif
 
 CFLAGS = -O2 -c \
