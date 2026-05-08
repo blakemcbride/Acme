@@ -3,6 +3,12 @@
 
 #ifdef _WIN32
 
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
+/* Defined in libthread/exec.c; returns and removes the HANDLE for pid. */
+extern HANDLE _threadprochandle(int pid);
+
 Waitmsg*
 wait(void)
 {
@@ -19,9 +25,41 @@ waitnohang(void)
 Waitmsg*
 waitfor(int pid)
 {
-	USED(pid);
-	werrstr("waitfor not yet implemented on Windows");
-	return nil;
+	HANDLE h;
+	DWORD code;
+	Waitmsg *w;
+	char buf[64];
+	int l;
+
+	h = _threadprochandle(pid);
+	if(h == INVALID_HANDLE_VALUE){
+		werrstr("waitfor: no handle for pid %d", pid);
+		return nil;
+	}
+	if(WaitForSingleObject(h, INFINITE) == WAIT_FAILED){
+		CloseHandle(h);
+		werrstr("waitfor: WaitForSingleObject failed");
+		return nil;
+	}
+	if(!GetExitCodeProcess(h, &code))
+		code = (DWORD)-1;
+	CloseHandle(h);
+
+	if(code == 0)
+		buf[0] = '\0';
+	else
+		snprint(buf, sizeof buf, "%lu", (unsigned long)code);
+	l = strlen(buf) + 1;
+	w = malloc(sizeof(Waitmsg) + l);
+	if(w == nil)
+		return nil;
+	w->pid = pid;
+	w->time[0] = 0;
+	w->time[1] = 0;
+	w->time[2] = 0;
+	w->msg = (char*)&w[1];
+	memmove(w->msg, buf, l);
+	return w;
 }
 
 #else
