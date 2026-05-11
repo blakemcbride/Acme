@@ -118,24 +118,15 @@ Uses the SDL3 backend for native macOS window management (no X11 or
 XQuartz required).  Ctrl-click and Alt-click emulate the middle and
 right mouse buttons for users without a three-button mouse.
 
-### Windows / MSYS2 (POSIX runtime)
+### Windows
 
-See `Windows-MSYS.md` for detailed instructions.  Requires MSYS2 at
-both build and runtime.  Uses the MSYS POSIX layer for fork, exec,
-pipes, and PTY.
+See `Windows-native.md` for detailed instructions.  Produces a single
+standalone `acme.exe` with no MSYS2 or Cygwin runtime dependency —
+only Windows system DLLs.  Built with the MSYS2 toolchain (UCRT64 by
+default) and statically linked.
 
 ```
 make
-```
-
-### Windows (native, standalone)
-
-See `Windows-native.md`.  Produces a single standalone `acme.exe`
-with no MSYS2 or Cygwin runtime dependency — only Windows system
-DLLs.  Built with mingw64 gcc and statically linked.
-
-```
-make native-win
 ```
 
 The resulting `bin/acme.exe` can be copied to any Windows 10/11 machine
@@ -148,7 +139,7 @@ Download it and run directly — no installation or dependencies needed.
 ### Clean
 
 ```
-make clean      # remove .o files and bin/acme
+make clean      # remove .o files and bin/acme[.exe]
 make realclean  # also remove lib/*.a files
 ```
 

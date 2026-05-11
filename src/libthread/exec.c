@@ -54,7 +54,15 @@ _runthreadspawn(int *fd, char *cmd, char **argv, char *dir)
 		if(e->dir == nil)
 			sysfatal("out of memory");
 	}
-	e->c = chancreate(sizeof(void*), 0);
+	/*
+	 * Channel size must match what sendul/recvul move (ulong).
+	 * Using sizeof(void*) was equivalent on LP64 (Linux/macOS) where
+	 * ulong and void* are both 8 bytes, but on LLP64 (Windows) ulong
+	 * is 4 bytes while void* is 8, so the receiver's amove() spilled
+	 * 4 bytes past &val and zeroed the low half of the adjacent Alt
+	 * struct's c field, segfaulting later in altdequeue.
+	 */
+	e->c = chancreate(sizeof(ulong), 0);
 
 	proccreate(execproc, e, 65536);
 	pid = recvul(e->c);

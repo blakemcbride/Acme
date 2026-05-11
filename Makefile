@@ -1,11 +1,16 @@
 override PLAN9 := $(realpath .)
 export PLAN9
 
-# On MSYS2/Cygwin, pin the MSYS gcc so that installing mingw64-gcc
-# (needed only for the FreeType ABI shim) does not hijack CC.
+# On MSYS2, pin the toolchain gcc that matches the active subsystem so
+# every library is built with the same ABI as the final acme binary.
+# Defaults to /ucrt64 but honors $MSYSTEM_PREFIX (MINGW64 / CLANG64 work
+# transparently).  Override on the command line if needed:
+#   make MSYS_PREFIX=/mingw64
 ifneq (,$(findstring NT,$(shell uname -s)))
-CC := /usr/bin/gcc
+MSYS_PREFIX ?= $(if $(MSYSTEM_PREFIX),$(MSYSTEM_PREFIX),/ucrt64)
+CC := $(MSYS_PREFIX)/bin/gcc
 export CC
+export MSYS_PREFIX
 endif
 
 LIBS = lib9 libbio libregexp libthread libmux lib9pclient libauth \
@@ -26,14 +31,9 @@ clean:
 	done
 	$(MAKE) -C src/cmd/acme-sdl3 clean
 	find src -name '*.o' -delete
-	rm -f bin/acme
+	rm -f bin/acme bin/acme.exe
 
 realclean: clean
 	rm -f lib/*.a
 
-# Native Windows build: standalone .exe with no Cygwin/MSYS runtime dependency.
-# Uses mingw64 gcc with static linking.
-native-win:
-	$(MAKE) NATIVE_WIN=1 CC=/mingw64/bin/gcc all
-
-.PHONY: all libs clean realclean native-win
+.PHONY: all libs clean realclean

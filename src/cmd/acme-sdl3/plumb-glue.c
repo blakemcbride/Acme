@@ -121,6 +121,11 @@ plumb_estrdup(char *s)
 #define PLUMB_OPENER "open"
 #elif defined(__CYGWIN__) || defined(__MSYS__)
 #define PLUMB_OPENER "cygstart"
+#elif defined(_WIN32)
+/* explorer.exe dispatches via ShellExecute, handling http(s) URLs and
+ * files with registered associations.  It's a real .exe (unlike the
+ * cmd builtin "start"), so it works as a single-token plumb command. */
+#define PLUMB_OPENER "explorer"
 #else
 #define PLUMB_OPENER "xdg-open"
 #endif

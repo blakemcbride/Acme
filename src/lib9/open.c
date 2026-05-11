@@ -82,6 +82,7 @@ static struct {
 	int nd;
 } dirs;
 
+#ifndef _WIN32
 static int
 dirput(int fd, DIR *d)
 {
@@ -112,6 +113,7 @@ dirput(int fd, DIR *d)
 	unlock(&dirs.lk);
 	return 0;
 }
+#endif
 
 static DIR*
 dirget(int fd)
@@ -126,6 +128,7 @@ dirget(int fd)
 	return d;
 }
 
+#ifndef _WIN32
 static DIR*
 dirdel(int fd)
 {
@@ -140,6 +143,7 @@ dirdel(int fd)
 	unlock(&dirs.lk);
 	return d;
 }
+#endif
 
 int
 p9create(char *path, int mode, ulong perm)

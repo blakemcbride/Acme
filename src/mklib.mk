@@ -4,15 +4,16 @@
 
 PLAN9 ?= $(realpath ../..)
 UNAME_S := $(shell uname -s)
-ifdef NATIVE_WIN
-CC = /mingw64/bin/gcc
-AR = /mingw64/bin/ar
-else ifneq (,$(findstring NT,$(UNAME_S)))
-CC = /usr/bin/gcc
+ifneq (,$(findstring NT,$(UNAME_S)))
+# Inherit MSYS_PREFIX from the parent make; default to /ucrt64 for
+# direct invocation.  Honors $MSYSTEM_PREFIX (MINGW64 / CLANG64).
+MSYS_PREFIX ?= $(if $(MSYSTEM_PREFIX),$(MSYSTEM_PREFIX),/ucrt64)
+CC = $(MSYS_PREFIX)/bin/gcc
+AR = $(MSYS_PREFIX)/bin/ar
 else
 CC ?= cc
-endif
 AR ?= ar
+endif
 ARFLAGS = rcs
 
 # GCC-only warning flags (clang does not support these)
@@ -43,6 +44,7 @@ CFLAGS = -O2 -c \
 	-fsigned-char \
 	-fno-common \
 	-std=gnu11 \
+	-ggdb \
 	-DPLAN9PORT \
 	$(EXTRA_CFLAGS)
 

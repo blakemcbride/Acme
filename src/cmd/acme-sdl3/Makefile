@@ -12,7 +12,10 @@ PLAN9 ?= $(realpath ../../..)
 UNAME_S := $(shell uname -s)
 
 ifneq (,$(findstring NT,$(UNAME_S)))
-CC = /usr/bin/gcc
+# MSYS2 toolchain prefix.  Defaults to /ucrt64; honors $MSYSTEM_PREFIX
+# if set, so building from MINGW64 / CLANG64 still works.
+MSYS_PREFIX ?= $(if $(MSYSTEM_PREFIX),$(MSYSTEM_PREFIX),/ucrt64)
+CC = $(MSYS_PREFIX)/bin/gcc
 else
 CC ?= cc
 endif
@@ -35,9 +38,9 @@ FONTCONFIG_LDFLAGS := $(shell pkg-config --libs fontconfig 2>/dev/null || echo "
 PLATFORM_WARN_FLAGS =
 PLATFORM_LDFLAGS = -lm -lpthread -framework CoreFoundation
 else ifneq (,$(findstring NT,$(UNAME_S)))
-# Use -idirafter so mingw64 headers don't shadow MSYS system headers.
-# -idirafter is searched AFTER standard system includes, so
-# /usr/include/pthread.h is found before /mingw64/include/pthread.h.
+# Use -idirafter so MSYS2 toolchain headers don't shadow MSYS system
+# headers.  -idirafter is searched AFTER standard system includes, so
+# /usr/include/pthread.h is found before $(MSYS_PREFIX)/include/pthread.h.
 FREETYPE_CFLAGS := $(subst -I,-idirafter ,$(shell pkg-config --cflags freetype2 2>/dev/null))
 FREETYPE_LDFLAGS := $(shell pkg-config --libs freetype2 2>/dev/null || echo "-lfreetype")
 SDL3_CFLAGS := $(subst -I,-idirafter ,$(shell pkg-config --cflags sdl3 2>/dev/null))
@@ -78,10 +81,10 @@ CFLAGS = -O2 -c \
 	-std=gnu11 \
 	-ggdb
 
-ifdef NATIVE_WIN
-# Static linking: standalone .exe with no DLL dependencies beyond
-# Windows system DLLs.  Lists all transitive deps explicitly.
-LDFLAGS = -static -L$(PLAN9)/lib -L/mingw64/lib \
+ifneq (,$(findstring NT,$(UNAME_S)))
+# Windows: static linking, standalone .exe with no DLL dependencies
+# beyond Windows system DLLs.  All transitive deps listed explicitly.
+LDFLAGS = -static -L$(PLAN9)/lib -L$(MSYS_PREFIX)/lib \
 	-lsec -lauth -lauthsrv -lmemdraw -lndb -lplumb \
 	-lmemlayer -lframe -ldraw -l9pclient -lip -lmp -lmux \
 	-lthread -lregexp9 -lcomplete -lbio -l9 -lthread -l9 -lsec -l9 \
@@ -94,6 +97,8 @@ LDFLAGS = -static -L$(PLAN9)/lib -L/mingw64/lib \
 	-lversion -luuid -ladvapi32 -lsetupapi -lshell32 -ldinput8 \
 	-lusp10 -lrpcrt4 -ldwrite -lws2_32 \
 	-mwindows -static-libgcc -static-libstdc++
+
+TARGET = $(PLAN9)/bin/acme.exe
 else
 SDL3_LDFLAGS_FIXED := $(SDL3_LDFLAGS)
 
@@ -103,9 +108,9 @@ LDFLAGS = -L$(PLAN9)/lib \
 	-lmemlayer -lframe -ldraw -l9pclient -lip -lmp -lmux \
 	-lthread -lregexp9 -lcomplete -lbio -l9 -lthread -l9 -lsec -l9 \
 	$(PLATFORM_LDFLAGS)
-endif
 
 TARGET = $(PLAN9)/bin/acme
+endif
 
 # Source directories
 ACME = ../acme
@@ -131,12 +136,6 @@ LOCAL_OBJ = $(LOCAL_SRC:.c=.o)
 ACME_OBJ = $(ACME_SRC:.c=.o)
 DEVDRAW_OBJ = $(DEVDRAW_SRC:.c=.o)
 FONTSRV_OBJ = fontsrv-x11.o pjw.o
-
-# On MSYS/Cygwin, FreeType struct layout differs (LP64 vs LLP64).
-# ft-shim.o is compiled with mingw64 gcc so it sees the correct ABI.
-ifneq (,$(findstring NT,$(UNAME_S)))
-FONTSRV_OBJ += ft-shim.o
-endif
 
 OBJS = $(LOCAL_OBJ) $(ACME_OBJ) $(DEVDRAW_OBJ) $(FONTSRV_OBJ)
 
@@ -214,10 +213,6 @@ fontsrv-x11.o: $(FONTSRV)/x11.c
 
 pjw.o: $(FONTSRV)/pjw.c
 	$(CC) $(CFLAGS) -I$(FONTSRV) $(FONTSRV)/pjw.c
-
-# FreeType ABI shim — compiled with mingw64 gcc for correct struct layout
-ft-shim.o: $(FONTSRV)/ft-shim.c $(FONTSRV)/ft-shim.h
-	/mingw64/bin/gcc -O2 -c $(FREETYPE_CFLAGS) -I$(FONTSRV) -o $@ $<
 
 clean:
 	rm -f *.o $(MKLATINKBD) $(DEVDRAW)/latin1.h

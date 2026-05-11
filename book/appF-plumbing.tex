@@ -8,8 +8,9 @@ are used when \file{\textasciitilde/lib/plumbing} does not exist.  If
 you create a custom plumbing file, copy these rules as a starting point.
 
 The opener command varies by platform: \cmd{xdg-open} on Linux,
-\cmd{open} on macOS, \cmd{cygstart} on Windows/MSYS2.  In the rules
-below, \texttt{OPENER} represents the platform-appropriate command.
+\cmd{open} on macOS, \cmd{explorer} on native Windows (which dispatches
+through \cmd{ShellExecute}).  In the rules below, \texttt{OPENER}
+represents the platform-appropriate command.
 
 \section{Variable Definitions}
 

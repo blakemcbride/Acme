@@ -356,7 +356,13 @@ __ifmt(Fmt *f)
 	}
 #endif
 	if(f->r == 'p'){
-		u = (ulong)va_arg(f->args, void*);
+		/* Pointer width may exceed ulong on LLP64 (Windows): pointers
+		 * are 64 bits but ulong is 32, so casting to ulong would
+		 * truncate.  Route through uvlong via the isv path so the full
+		 * pointer survives.  On LP64 (Linux/macOS) ulong is already 64
+		 * bits, so this is equivalent to the prior code. */
+		vu = (uvlong)(uintptr)va_arg(f->args, void*);
+		isv = 1;
 		f->r = 'x';
 		fl |= FmtUnsigned;
 	}else if(fl & FmtVLong){

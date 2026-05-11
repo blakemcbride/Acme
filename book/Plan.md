@@ -18,7 +18,7 @@
 - `docs/KeyBoard.md` -- keyboard navigation reference
 - `docs/CheatSheet.txt` -- command and mouse quick reference
 - `macOS.md` -- macOS build and mouse notes
-- `Windows.md` -- Windows/MSYS2 build instructions
+- `Windows-native.md` -- Windows build (MSYS2 toolchain, standalone .exe)
 - `lib/keyboard` -- Unicode composition table (588 entries)
 - `src/cmd/acme/exec.c` -- all built-in commands and their flags
 - `src/cmd/acme/acme.c` -- command-line flags and startup
@@ -96,16 +96,17 @@ Homebrew prerequisites. Xcode Command Line Tools. Building. Notes
 on font discovery and Homebrew paths.
 
 #### 2.3 Windows
-MSYS2 installation. Why MSYS2 MSYS shell (not MinGW). Package
-installation. Building and running. Runtime dependencies
-(msys-2.0.dll).
+MSYS2 installation. Why MSYS2 UCRT64 shell (not the plain MSYS shell).
+Package installation. Building and running. The build produces a
+standalone `acme.exe` with no MSYS2 runtime dependency — only Windows
+system DLLs are required at runtime.
 
 #### 2.4 Command-Line Options
 All flags: `-a`, `-b`, `-c`, `-f`, `-F`, `-l`, `-W`, `-r`.
 Environment variables: `$acmeshell`, `$tabstop`, `$NAMESPACE`,
 `$HOME`.
 
-**Sources:** README.md, macOS.md, Windows.md, acme.c (flag parsing).
+**Sources:** README.md, macOS.md, Windows-native.md, acme.c (flag parsing).
 
 ### Chapter 3: The Acme Screen
 
@@ -294,7 +295,7 @@ directives. Pattern matching. The `plumb start` and `plumb client`
 actions.
 
 #### 9.4 Platform Differences
-`xdg-open` (Linux), `open` (macOS), `cygstart` (Windows/MSYS2).
+`xdg-open` (Linux), `open` (macOS), `explorer` (Windows; dispatches via ShellExecute).
 
 **Sources:** plumb-glue.c (default rules), plumb-rules.c, plumb-
 match.c, plumber man page, Pike's plumber paper.

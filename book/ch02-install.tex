@@ -113,60 +113,58 @@ for extended use.  See Chapter~\ref{ch:mouse} for details.
 
 \index{installation!Windows}
 
-Acme on Windows can be built two ways:
-
-\begin{itemize}
-\item \textbf{MSYS2 build} — uses the MSYS2 POSIX compatibility layer.
-  Easier to build but requires MSYS2 installed at runtime.
-\item \textbf{Native standalone build} — produces a single
-  \file{acme.exe} that runs on any Windows~10 or later machine with
-  no other files required.
-\end{itemize}
-
-Both builds require MSYS2 at \emph{build} time for the toolchain.
+The Windows build produces a single standalone \file{acme.exe} that
+runs on any Windows~10 or later machine with no other files
+required --- only Windows system DLLs.  MSYS2 is needed at
+\emph{build} time for the toolchain and static libraries; it is
+\emph{not} needed at runtime.
 
 \subsection{Prerequisites}
 
 \begin{enumerate}
 \item Install MSYS2 from \url{https://www.msys2.org/}.
-\item Open any MSYS2 shell from the Start menu (MSYS, MINGW64, or
-      UCRT64 — the build system pins the right compilers automatically).
+\item Open the \textbf{MSYS2 UCRT64} shell from the Start menu
+      (the icon labeled ``MSYS2 UCRT64'').  Avoid the plain
+      ``MSYS2 MSYS'' shell --- it uses the Cygwin-derived MSYS gcc,
+      which is not what this build targets.  MINGW64 and CLANG64
+      shells also work; the build auto-detects the active subsystem.
 \item Install dependencies:
 \end{enumerate}
 
 \begin{lstlisting}[language=bash]
 pacman -Syu
-pacman -S git gcc make pkg-config zlib-devel
-pacman -S mingw-w64-x86_64-gcc \
-          mingw-w64-x86_64-sdl3 \
-          mingw-w64-x86_64-fontconfig \
-          mingw-w64-x86_64-freetype
+pacman -S git make
+pacman -S mingw-w64-ucrt-x86_64-toolchain \
+          mingw-w64-ucrt-x86_64-sdl3 \
+          mingw-w64-ucrt-x86_64-fontconfig \
+          mingw-w64-ucrt-x86_64-freetype
 \end{lstlisting}
 
-\subsection{Building (MSYS2 build)}
+The \pkg{toolchain} group already pulls in \pkg{pkgconf}, which
+provides the \cmd{pkg-config} binary.  Do not install
+\pkg{mingw-w64-ucrt-x86\_64-pkg-config} explicitly --- it conflicts
+with \pkg{pkgconf}.  Note that the SDL3 package name is lowercase
+(\pkg{sdl3}), unlike SDL2.
 
-From any MSYS2 shell:
+\paragraph{A note on \texttt{PATH}.}
+Several common Windows installs (Strawberry Perl, Anaconda, Git for
+Windows) ship their own \cmd{gcc} and \cmd{pkg-config} and place them
+on \texttt{PATH} ahead of MSYS2.  Symptoms range from confusing
+\cmd{pkg-config} errors (``\texttt{Can't locate Pod/Usage.pm}'') to a
+silent missing-header failure during compilation.  If
+\cmd{which gcc pkg-config} doesn't resolve under your active
+subsystem, prepend it before building:
 
 \begin{lstlisting}[language=bash]
-export PKG_CONFIG_PATH=/mingw64/lib/pkgconfig
-export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
-export PKG_CONFIG_ALLOW_SYSTEM_LIBS=1
+export PATH="/ucrt64/bin:/usr/bin:$PATH"
+\end{lstlisting}
+
+\subsection{Building}
+
+From the repository root:
+
+\begin{lstlisting}[language=bash]
 make
-./bin/acme
-\end{lstlisting}
-
-The binary depends on the MSYS2 runtime (\file{msys-2.0.dll}) and
-mingw64 DLLs.  It must be run from an MSYS2 environment or with
-those DLLs in the PATH.
-
-See \file{Windows-MSYS.md} in the source tree for full details.
-
-\subsection{Building (native standalone)}
-
-From any MSYS2 shell:
-
-\begin{lstlisting}[language=bash]
-make native-win
 \end{lstlisting}
 
 This produces \file{bin/acme.exe} (approximately 13~MB), statically

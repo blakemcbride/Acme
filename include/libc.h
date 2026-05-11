@@ -386,7 +386,12 @@ extern	void	exits(char*);
 extern	double	p9frexp(double, int*);
 extern	ulong	getcallerpc(void*);
 #if defined(__GNUC__) || defined(__clang__) || defined(__IBMC__)
-#define getcallerpc(x) ((ulong)__builtin_return_address(0))
+/* Route through uintptr so the narrowing to ulong on LLP64 (Windows,
+ * where ulong is 32 bits but pointers are 64) is an int-to-int cast
+ * rather than a pointer-to-int cast, silencing -Wpointer-to-int-cast.
+ * The malloc tag is diagnostic only, so truncating the high bits of
+ * the return address is acceptable.  On LP64 both casts are no-ops. */
+#define getcallerpc(x) ((ulong)(uintptr)__builtin_return_address(0))
 #endif
 extern	char*	p9getenv(char*);
 extern	int	p9putenv(char*, char*);
