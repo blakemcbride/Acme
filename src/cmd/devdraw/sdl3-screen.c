@@ -431,7 +431,20 @@ sdlloop(void)
 	sdllock();
 	for(;;) {
 		sdlunlock();
-		if(!SDL_WaitEvent(&ev)) {
+		/*
+		 * Use a timed wait, not SDL_WaitEvent, because the custom
+		 * cross-thread events posted by the RPC thread (flushevent,
+		 * resizeevent, attachevent via SDL_PushEvent) do not reliably
+		 * wake a blocked SDL_WaitEvent. Most of the time a real OS
+		 * input event follows immediately and rescues the pending
+		 * flush (key-up after a keystroke, motion during a drag,
+		 * resize events during a resize), so the stale render goes
+		 * unnoticed. But a button-2 "Paste" completes on button-up,
+		 * the last event of the gesture, so without a poll its render
+		 * would not appear until the next mouse movement. Waking every
+		 * few ms guarantees queued flushes are presented promptly.
+		 */
+		if(!SDL_WaitEventTimeout(&ev, 10)) {
 			sdllock();
 			continue;
 		}
