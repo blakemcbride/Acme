@@ -702,7 +702,11 @@ texttype(Text *t, Rune r)
 			seq++;
 			filemark(t->file);
 		}
-		if(t->q0 < t->file->b.nc) {
+		if(t->q1 > t->q0){
+			/* selection: delete whole highlighted block, like backspace */
+			cut(t, t, nil, TRUE, TRUE, nil, 0);
+			textshow(t, t->q0, t->q0, 1);
+		}else if(t->q0 < t->file->b.nc) {
 			textdelete(t, t->q0, t->q0+1, TRUE);
 			textsetselect(t, t->q0, t->q0);
 			textfill(t);
