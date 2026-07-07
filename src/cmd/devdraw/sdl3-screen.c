@@ -596,7 +596,11 @@ sdlloop(void)
 					kbuttons |= 2;
 				if(mod & SDL_KMOD_ALT)
 					kbuttons |= 4;
-				if(oldkb != kbuttons && (buttons || kbuttons)) {
+				/* Only emit button 2/3 emulation while a real mouse
+				 * button is held (chording). Otherwise a bare Ctrl/Alt
+				 * keypress (e.g. Ctrl+C/V/X) would inject a phantom
+				 * button-2 "execute" at the mouse position. */
+				if(oldkb != kbuttons && buttons) {
 					altdown = 0;
 					shift = 0;
 					if(mod & SDL_KMOD_SHIFT)
@@ -646,7 +650,11 @@ sdlloop(void)
 					kbuttons |= 2;
 				if(mod & SDL_KMOD_ALT)
 					kbuttons |= 4;
-				if(oldkb != kbuttons && (buttons || kbuttons)) {
+				/* Only emit button 2/3 emulation while a real mouse
+				 * button is held (chording). Otherwise a bare Ctrl/Alt
+				 * keypress (e.g. Ctrl+C/V/X) would inject a phantom
+				 * button-2 "execute" at the mouse position. */
+				if(oldkb != kbuttons && buttons) {
 					shift = 0;
 					if(mod & SDL_KMOD_SHIFT)
 						shift = 5;
