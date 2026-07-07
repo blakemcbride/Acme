@@ -271,6 +271,7 @@ postscript/font/
 sky/*.scat
 sky/here
 src/**/o.*
+src/cmd/acme-sdl3/mklatinkbd-host
 src/cmd/awk/proctab.c
 src/cmd/awk/y.output
 src/cmd/bc.tab.c
