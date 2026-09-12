@@ -820,6 +820,18 @@ texttype(Text *t, Rune r)
 			q0++;
 		textshow(t, q0, q0, TRUE);
 		return;
+	case Kcmd+'a':	/* ^A / %A: select all */
+		typecommit(t);
+		textsetselect(t, 0, t->file->b.nc);
+		return;
+	case 0x1B:	/* Esc with a selection: deselect, don't delete */
+		if(t->q1 > t->q0){
+			textsetselect(t, t->q1, t->q1);
+			t->eq0 = ~0;
+			t->iq1 = t->q1;
+			return;
+		}
+		break;	/* no selection: select recently typed text, below */
 	case 0x03:	/* ^C: copy */
 	case Kcmd+'c':	/* %C: copy */
 		typecommit(t);

@@ -57,5 +57,17 @@ target position and place the cursor there.
 | Ctrl+H         | Delete character (same as Backspace)         |
 | Ctrl+W         | Delete word                                  |
 | Ctrl+U         | Delete to beginning of line                  |
-| Ctrl+A         | Move to beginning of line                    |
 | Ctrl+E         | Move to end of line                          |
+
+## Selection and Clipboard
+
+| Key            | Action                                      |
+|----------------|---------------------------------------------|
+| Ctrl+A         | Select all text in the buffer                |
+| Ctrl+C         | Copy selection to the snarf buffer           |
+| Ctrl+X         | Cut selection to the snarf buffer            |
+| Ctrl+V         | Paste from the snarf buffer                  |
+| Esc            | Select recently typed text; if text is selected, deselect it |
+
+Ctrl+A selects the whole buffer under the keyboard focus without
+scrolling.  Use Ctrl+Left or Home to move to the beginning of a line.

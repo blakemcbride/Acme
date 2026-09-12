@@ -334,6 +334,10 @@ sdltoplan9kbd(SDL_Keycode k, SDL_Keymod mod)
 	/* Letters: SDL3 keycodes are lowercase ASCII */
 	if(k >= SDLK_A && k <= SDLK_Z) {
 		int c = (int)k;
+		/* Ctrl+A: select all. Sent as Kcmd+'a' so it stays distinct
+		 * from Ctrl+Left, which still produces 0x01 (beginning of line). */
+		if(k == SDLK_A && (mod & SDL_KMOD_CTRL))
+			return Kcmd+'a';
 		if(mod & SDL_KMOD_SHIFT)
 			c = c - 'a' + 'A';
 		if(mod & SDL_KMOD_CTRL)
