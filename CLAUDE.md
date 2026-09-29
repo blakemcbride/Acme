@@ -73,6 +73,22 @@ Plumbing rules are embedded in `src/cmd/acme-sdl3/plumb-glue.c` as
 Users can still override via `~/lib/plumbing`. Default rules use
 `xdg-open` for URLs, images, and PDFs.
 
+## Font Selection
+
+Fonts come from the embedded fontsrv (fontconfig PostScript names,
+`Name/Size[a]/font`). Precedence: `-f`/`-F` flags > `$font` env var >
+built-in default (`DejaVuSansMono/13a/font`). Resolution happens in
+`src/cmd/acme-sdl3/fontpipe.c` (`fontsrv_resolvefont`) before initdraw:
+a missing default is silently replaced by fontconfig's closest
+monospace match (warning printed); a missing user-specified font is a
+fatal error with suggested fixes. `acme --fonts` lists installed font
+names; `acme -h`/`--help` prints full usage (help text in acme.c).
+gfx_main silences libdecor plugin warnings during SDL_Init by swapping
+the stdio `stderr` stream to /dev/null, NOT by redirecting fd 2 —
+threadmain runs concurrently and its fprint(2, ...) startup errors
+must keep reaching the real stderr (libdecor/GTK print via stdio;
+Plan 9 code prints straight to fd 2).
+
 ## Stale Socket Handling
 
 `src/lib9/post9p.c` removes stale Unix domain sockets before launching

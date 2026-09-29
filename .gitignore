@@ -298,6 +298,19 @@ state.old
 unix/*.tgz
 y.tab.[ch]
 
+# LaTeX intermediate files from building the book
+book/*.aux
+book/*.idx
+book/*.ilg
+book/*.ind
+book/*.log
+book/*.out
+book/*.toc
+book/*.lof
+book/*.lot
+book/*.bbl
+book/*.blg
+
 # Code-RAG local index files (written by bld; machine-local, not part of the project)
 .mcp.json
 CLAUDE.local.md

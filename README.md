@@ -88,6 +88,13 @@ The changes, in rough order:
     are expanded to the user's home directory.  Type `~/src/foo.c` in
     a tag and `Get` or right-click it to open the file.
 
+13. **Font selection and fallback** — Fonts can be chosen with the
+    `-f`/`-F` command-line options or the `$font` environment variable.
+    If the built-in default font is not installed, acme automatically
+    falls back to the closest installed monospace font instead of
+    refusing to start.  `acme --fonts` lists all installed font names
+    and `acme --help` explains everything.
+
 ## Building
 
 The codebase supports four build targets, all from the same source
@@ -151,6 +158,25 @@ bin/acme
 
 No environment variables or configuration files are required.  Acme
 will open a window and is ready to use.
+
+## Fonts
+
+A font is written `Name/Size/font`, e.g. `DejaVuSansMono/13a/font`:
+`Name` is a font name as listed by `acme --fonts`, `Size` is the height
+in pixels, and a trailing `a` turns on antialiasing.  The path of a
+Plan 9 bitmap font file also works.
+
+The font is chosen by, in decreasing precedence:
+
+1. the `-f` (main) and `-F` (alternate) command-line options
+2. the `$font` environment variable (sets both fonts)
+3. the built-in default, `DejaVuSansMono/13a/font`
+
+If the built-in default is not installed, acme falls back to the
+closest installed monospace font (as chosen by fontconfig) and prints
+a warning.  A missing font requested explicitly with `-f`, `-F`, or
+`$font` is a fatal error with suggested fixes.  Run `acme --help` for
+the full story.
 
 ## Learning Acme
 

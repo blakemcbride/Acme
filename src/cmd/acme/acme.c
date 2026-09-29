@@ -58,6 +58,47 @@ void	acmeerrorinit(void);
 void	readfile(Column*, char*);
 static int	shutdown(void*, char*);
 
+/* embedded fontsrv (acme-sdl3/fontpipe.c) */
+extern char	*fontsrv_resolvefont(char*, int);
+extern void	fontsrv_listfonts(void);
+
+static void
+help(void)
+{
+	print("usage: acme [options] [file ...]\n"
+	"\n"
+	"Options:\n"
+	"	-a		autoindent in all windows\n"
+	"	-b		typing goes to the most recently clicked text,\n"
+	"			not the text under the mouse\n"
+	"	-c ncol		start with ncol columns\n"
+	"	-f font		main font (see below)\n"
+	"	-F font		alternate font, switched to by the Font command\n"
+	"	-l file		restore the session saved in file by Dump\n"
+	"	-m mtpt		mount point for acme's file system\n"
+	"	-r		swap mouse scroll buttons\n"
+	"	-W size		window size/position: WIDTHxHEIGHT or WIDTHxHEIGHT@X,Y\n"
+	"	-D		libthread debugging\n"
+	"	--fonts		list the names of all installed fonts and exit\n"
+	"	-h, --help	print this message and exit\n"
+	"\n"
+	"Fonts:\n"
+	"	A font is written Name/Size/font, e.g. DejaVuSansMono/13a/font:\n"
+	"	Name is a font name as listed by 'acme --fonts', Size is the\n"
+	"	height in pixels, and a trailing 'a' turns on antialiasing.\n"
+	"	The path of a Plan 9 bitmap font file also works.\n"
+	"\n"
+	"	The font is chosen by, in decreasing precedence:\n"
+	"	1. the -f and -F command-line options\n"
+	"	2. the $font environment variable (sets both fonts)\n"
+	"	3. the built-in default, %s\n"
+	"\n"
+	"	If the built-in default is not installed, acme falls back to the\n"
+	"	closest installed monospace font and prints a warning.  A missing\n"
+	"	font requested with -f, -F or $font is a fatal error.\n",
+	fontnames[0]);
+}
+
 void
 derror(Display *d, char *errorstr)
 {
@@ -70,6 +111,7 @@ threadmain(int argc, char *argv[])
 {
 	int i;
 	char *p, *loadfile;
+	int userfont[2];
 
 	Column *c;
 	int ncol;
@@ -77,7 +119,29 @@ threadmain(int argc, char *argv[])
 
 	rfork(RFENVG|RFNAMEG);
 
+	for(i=1; i<argc; i++){
+		if(strcmp(argv[i], "-h")==0 || strcmp(argv[i], "--help")==0){
+			help();
+			threadexitsall(nil);
+		}
+		if(strcmp(argv[i], "--fonts")==0){
+			fontsrv_listfonts();
+			threadexitsall(nil);
+		}
+	}
+
 	ncol = -1;
+
+	userfont[0] = FALSE;
+	userfont[1] = FALSE;
+	p = getenv("font");
+	if(p!=nil && p[0]!='\0'){
+		fontnames[0] = p;
+		fontnames[1] = p;
+		userfont[0] = TRUE;
+		userfont[1] = TRUE;
+	}else
+		free(p);
 
 	loadfile = nil;
 	ARGBEGIN{
@@ -104,11 +168,13 @@ threadmain(int argc, char *argv[])
 		fontnames[0] = ARGF();
 		if(fontnames[0] == nil)
 			goto Usage;
+		userfont[0] = TRUE;
 		break;
 	case 'F':
 		fontnames[1] = ARGF();
 		if(fontnames[1] == nil)
 			goto Usage;
+		userfont[1] = TRUE;
 		break;
 	case 'l':
 		loadfile = ARGF();
@@ -130,7 +196,8 @@ threadmain(int argc, char *argv[])
 		break;
 	default:
 	Usage:
-		fprint(2, "usage: acme -a -c ncol -f fontname -F fixedwidthfontname -l loadfile -W winsize\n");
+		fprint(2, "usage: acme [-abrD] [-c ncol] [-f font] [-F font] [-l loadfile] [-m mtpt] [-W winsize] [--fonts] [file ...]\n");
+		fprint(2, "run 'acme --help' for details\n");
 		threadexitsall("usage");
 	}ARGEND
 
@@ -155,6 +222,12 @@ threadmain(int argc, char *argv[])
 		maxtab = 4;
 	if(loadfile)
 		rowloadfonts(loadfile);
+	i = strcmp(fontnames[0], fontnames[1]) == 0;	/* same font: resolve (and warn) once */
+	fontnames[0] = fontsrv_resolvefont(fontnames[0], userfont[0]);
+	if(i)
+		fontnames[1] = estrdup(fontnames[0]);
+	else
+		fontnames[1] = fontsrv_resolvefont(fontnames[1], userfont[1]);
 	putenv("font", fontnames[0]);
 	snarffd = open("/dev/snarf", OREAD|OCEXEC);
 /*

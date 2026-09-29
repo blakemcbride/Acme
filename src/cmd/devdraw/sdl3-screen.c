@@ -11,6 +11,7 @@
  */
 
 #include <u.h>
+#include <stdio.h>	/* stderr stream swap in gfx_main */
 #include <libc.h>
 #include <draw.h>
 #include <memdraw.h>
@@ -783,24 +784,30 @@ install_x_error_handler(void)
 void
 gfx_main(void)
 {
-	/* Silence libdecor "failed to load plugin" warnings on stderr */
-#if defined(_WIN32) && !defined(__CYGWIN__)
-	int devnull = -1;  /* no /dev/null on Windows */
-#else
-	int devnull = open("/dev/null", O_WRONLY);
+	/*
+	 * Silence libdecor "failed to load plugin" warnings during
+	 * SDL_Init.  libdecor and GTK print through the stdio stderr
+	 * stream, so swap the stream rather than redirect fd 2:
+	 * threadmain runs concurrently on another thread and its
+	 * fprint(2, ...) messages must keep reaching the real stderr.
+	 * (Not on Windows: no /dev/null, and stderr is not assignable.)
+	 */
+#if !defined(_WIN32) || defined(__CYGWIN__)
+	FILE *realstderr, *nullf;
+
+	realstderr = stderr;
+	nullf = fopen("/dev/null", "w");
+	if(nullf != nil)
+		stderr = nullf;
 #endif
-	int saved_stderr = -1;
-	if(devnull >= 0){
-		saved_stderr = dup(2, -1);
-		dup(devnull, 2);
-		close(devnull);
-	}
 	if(!SDL_Init(SDL_INIT_VIDEO))
 		sysfatal("SDL_Init: %s", SDL_GetError());
-	if(saved_stderr >= 0){
-		dup(saved_stderr, 2);
-		close(saved_stderr);
+#if !defined(_WIN32) || defined(__CYGWIN__)
+	if(nullf != nil){
+		stderr = realstderr;
+		fclose(nullf);
 	}
+#endif
 
 	install_x_error_handler();
 

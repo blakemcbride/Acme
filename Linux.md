@@ -48,8 +48,15 @@ make realclean  # also remove lib/*.a files
 No environment variables or configuration files are required. Acme
 will open a window and is ready to use.
 
-Fonts are discovered via fontconfig/freetype. The default plumbing
-rules use `xdg-open` for URLs, images, and PDFs.
+Fonts are discovered via fontconfig/freetype. The default font is
+`DejaVuSansMono/13a/font`; if it is not installed (on Fedora,
+`sudo dnf install dejavu-sans-mono-fonts` provides it), acme falls
+back to the closest installed monospace font and prints a warning.
+Choose a font with `-f Name/Size/font` or the `$font` environment
+variable; `acme --fonts` lists installed font names and `acme --help`
+explains the details.
+
+The default plumbing rules use `xdg-open` for URLs, images, and PDFs.
 
 Custom plumbing rules can be placed in `~/lib/plumbing` to override
 the built-in defaults.

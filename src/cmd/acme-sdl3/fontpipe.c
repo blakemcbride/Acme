@@ -7,6 +7,9 @@
  */
 
 #include <u.h>
+
+#include <fontconfig/fontconfig.h>
+
 #include <libc.h>
 #include <draw.h>
 #include <thread.h>
@@ -43,6 +46,148 @@ fontcmp(const void *va, const void *vb)
 	a = (XFont*)va;
 	b = (XFont*)vb;
 	return strcmp(a->name, b->name);
+}
+
+static int
+findxfont(char *name)
+{
+	int i;
+
+	for(i=0; i<nxfont; i++)
+		if(strcmp(xfont[i].name, name) == 0)
+			return i;
+	return -1;
+}
+
+/*
+ * Ask fontconfig for the installed monospace font that best matches
+ * the missing font name.  Returns the name of an installed font
+ * (points into xfont, do not free), or nil.
+ */
+static char*
+matchmono(char *missing)
+{
+	FcPattern *pat, *match;
+	FcResult res;
+	FcChar8 *ps;
+	char *name;
+	int i;
+
+	name = nil;
+	pat = FcPatternCreate();
+	if(pat == nil)
+		return nil;
+	if(missing != nil && missing[0] != '\0')
+		FcPatternAddString(pat, FC_FAMILY, (FcChar8*)missing);
+	FcPatternAddString(pat, FC_FAMILY, (FcChar8*)"monospace");
+	FcPatternAddInteger(pat, FC_SPACING, FC_MONO);
+	FcConfigSubstitute(0, pat, FcMatchPattern);
+	FcDefaultSubstitute(pat);
+	match = FcFontMatch(0, pat, &res);
+	FcPatternDestroy(pat);
+	if(match != nil){
+		if(FcPatternGetString(match, FC_POSTSCRIPT_NAME, 0, &ps) == FcResultMatch){
+			i = findxfont((char*)ps);
+			if(i >= 0)
+				name = xfont[i].name;
+		}
+		FcPatternDestroy(match);
+	}
+	if(name == nil){
+		for(i=0; i<nxfont; i++)
+			if(cistrstr(xfont[i].name, "mono") != nil){
+				name = xfont[i].name;
+				break;
+			}
+	}
+	return name;
+}
+
+void
+fontsrv_listfonts(void)
+{
+	int i;
+
+	fontsrv_init();
+	for(i=0; i<nxfont; i++)
+		print("%s\n", xfont[i].name);
+}
+
+/*
+ * Resolve a font path before the display is opened.  A path naming
+ * an existing file (a Plan 9 bitmap font) is returned unchanged.
+ * Otherwise the Name/Size/font form is checked against the installed
+ * fonts.  If Name is not installed: a font the user asked for
+ * (command line or $font) is a fatal error with an explanation;
+ * for the built-in default, the closest installed monospace font
+ * is substituted with a warning.  Returns the path to use.
+ */
+char*
+fontsrv_resolvefont(char *path, int userspecified)
+{
+	char *p, *q, *buf, *slash, *sub, *new;
+
+	if(access(path, AEXIST) == 0)	/* a font file on disk */
+		return path;
+
+	p = path;
+	if(strncmp(p, "/mnt/font/", 10) == 0)
+		p += 10;
+	q = p;	/* skip scale prefix NN* */
+	while('0' <= *q && *q <= '9')
+		q++;
+	if(q > p && *q == '*')
+		p = q+1;
+
+	buf = strdup(p);
+	if(buf == nil)
+		sysfatal("out of memory");
+	slash = strchr(buf, '/');
+	if(slash == nil){
+		if(!userspecified){
+			free(buf);
+			return path;
+		}
+		fprint(2, "acme: bad font '%s': not a font file, and not of the form Name/Size/font\n", path);
+		fprint(2, "	example: -f 'DejaVuSansMono/13a/font' (Size in pixels; trailing 'a' = antialiased)\n");
+		fprint(2, "	run 'acme --fonts' to list installed font names, 'acme --help' for details\n");
+		threadexitsall("font");
+	}
+	*slash = '\0';
+
+	fontsrv_init();
+	if(findxfont(buf) >= 0){
+		free(buf);
+		return path;
+	}
+
+	sub = matchmono(buf);
+	if(sub == nil){
+		fprint(2, "acme: font '%s' is not installed and fontconfig found no monospace substitute\n", buf);
+		threadexitsall("font");
+	}
+
+	if(userspecified){
+		fprint(2, "acme: font '%s' is not installed (fontconfig has no font by that name)\n", buf);
+		fprint(2, "	run 'acme --fonts' to list installed font names\n");
+		fprint(2, "	closest installed monospace font: try -f '%s/%s'\n", sub, slash+1);
+		if(strcmp(buf, "DejaVuSansMono") == 0)
+			fprint(2, "	on Fedora, 'sudo dnf install dejavu-sans-mono-fonts' installs it\n");
+		fprint(2, "	fonts are set with -f, -F or $font; run 'acme --help' for details\n");
+		threadexitsall("font");
+	}
+
+	new = smprint("%.*s%s/%s", (int)(p-path), path, sub, slash+1);
+	if(new == nil)
+		sysfatal("out of memory");
+	fprint(2, "acme: default font %s is not installed; using %s instead\n", buf, sub);
+	if(strcmp(buf, "DejaVuSansMono") == 0)
+		fprint(2, "	(on Fedora, 'sudo dnf install dejavu-sans-mono-fonts' restores it;\n"
+			"	or choose a font with -f or $font — run 'acme --help' for details)\n");
+	else
+		fprint(2, "	(install it, or choose a font with -f or $font — run 'acme --help' for details)\n");
+	free(buf);
+	return new;
 }
 
 void*
@@ -193,7 +338,7 @@ static int
 parsefontpath(char *name, Fontarg *a)
 {
 	char *buf, *fontname, *sizep, *filep, *p;
-	int i, size, antialias;
+	int size, antialias;
 
 	buf = strdup(name);
 	if(buf == nil)
@@ -203,6 +348,7 @@ parsefontpath(char *name, Fontarg *a)
 	fontname = buf;
 	sizep = strchr(fontname, '/');
 	if(sizep == nil){
+		werrstr("bad font path '%s': expected Name/Size/font, e.g. DejaVuSansMono/13a/font", name);
 		free(buf);
 		return -1;
 	}
@@ -210,6 +356,7 @@ parsefontpath(char *name, Fontarg *a)
 
 	filep = strchr(sizep, '/');
 	if(filep == nil){
+		werrstr("bad font path '%s': expected Name/Size/font, e.g. DejaVuSansMono/13a/font", name);
 		free(buf);
 		return -1;
 	}
@@ -218,6 +365,7 @@ parsefontpath(char *name, Fontarg *a)
 	/* parse size and antialias flag */
 	size = strtol(sizep, &p, 10);
 	if(size <= 0){
+		werrstr("bad size '%s' in font path '%s': expected pixels, e.g. 13 or 13a (antialiased)", sizep, name);
 		free(buf);
 		return -1;
 	}
@@ -227,19 +375,19 @@ parsefontpath(char *name, Fontarg *a)
 		p++;
 	}
 	if(*p != '\0'){
+		werrstr("bad size '%s' in font path '%s': expected pixels, e.g. 13 or 13a (antialiased)", sizep, name);
 		free(buf);
 		return -1;
 	}
 
 	/* find font by name */
-	a->fontidx = -1;
-	for(i=0; i<nxfont; i++){
-		if(strcmp(xfont[i].name, fontname) == 0){
-			a->fontidx = i;
-			break;
-		}
-	}
+	a->fontidx = findxfont(fontname);
 	if(a->fontidx < 0){
+		p = matchmono(fontname);
+		if(p != nil)
+			werrstr("font '%s' is not installed; closest monospace font is '%s' ('acme --fonts' lists all)", fontname, p);
+		else
+			werrstr("font '%s' is not installed ('acme --fonts' lists installed fonts)", fontname);
 		free(buf);
 		return -1;
 	}
@@ -253,12 +401,14 @@ parsefontpath(char *name, Fontarg *a)
 	}else if(filep[0] == 'x' && strlen(filep) > 7 && strcmp(filep+7, ".bit") == 0){
 		a->range = strtoul(filep+1, &p, 16);
 		if(p != filep+7 || a->range % SubfontSize != 0){
+			werrstr("bad subfont file '%s' in font path '%s'", filep, name);
 			free(buf);
 			return -1;
 		}
 		a->range /= SubfontSize;
 		a->issubfont = 1;
 	}else{
+		werrstr("bad font path '%s': last element must be 'font', e.g. DejaVuSansMono/13a/font", name);
 		free(buf);
 		return -1;
 	}
@@ -286,7 +436,6 @@ _fontpipe(char *name)
 
 	if(parsefontpath(name, a) < 0){
 		free(a);
-		werrstr("bad font path: %s", name);
 		return -1;
 	}
 

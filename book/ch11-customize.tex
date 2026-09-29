@@ -26,6 +26,20 @@ acme -f 'DejaVuSans/14a/font' -F 'DejaVuSansMono/14a/font'
 The font name format is a fontconfig name followed by a size.  The
 \texttt{a} suffix indicates anti-aliased rendering.
 
+The startup fonts can also be set with the \env{font} environment
+variable, which applies to both the proportional and fixed-width
+font; the \cmd{-f} and \cmd{-F} options take precedence over it:
+
+\begin{lstlisting}[language=bash]
+export font='DejaVuSansMono/13a/font'
+acme
+\end{lstlisting}
+
+If the built-in default font is not installed, acme substitutes the
+closest installed monospace font and prints a warning.  A missing
+font requested explicitly with \cmd{-f}, \cmd{-F}, or \env{font} is a
+fatal error with suggested fixes.
+
 \subsection{Per-Window Fonts}
 
 Middle-click \cmd{Font} in any window tag to toggle between the
@@ -43,10 +57,11 @@ and middle-click the whole thing.
 \subsection{Available Fonts}
 
 Acme discovers fonts through fontconfig.  Any TrueType or OpenType font
-installed on your system is available.  To list installed fonts:
+installed on your system is available.  To list the font names acme
+accepts:
 
 \begin{lstlisting}[language=bash]
-fc-list : family | sort -u
+acme --fonts
 \end{lstlisting}
 
 \section{Tab Width}

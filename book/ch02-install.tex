@@ -207,13 +207,25 @@ Flag & Description \\
 \cmd{-l \textit{file}} & Load session state from a dump file. \\
 \cmd{-r} & Reverse scrollbar button mapping (Button~1 scrolls down). \\
 \cmd{-W \textit{WxH}} & Set initial window size, e.g., \cmd{-W 1200x800}. \\
+\cmd{-{}-fonts} & List the names of all installed fonts and exit. \\
+\cmd{-h}, \cmd{-{}-help} & Print a usage summary, including a full
+  explanation of font selection, and exit. \\
 \bottomrule
 \end{longtable}
 
 \noindent
-Fonts are specified as fontconfig names with a size suffix.  The
-default for both \cmd{-f} and \cmd{-F} is
-\file{DejaVuSansMono/13a/font}.
+Fonts are written \file{Name/Size/font}, e.g.\
+\file{DejaVuSansMono/13a/font}: \textit{Name} is a font name as listed
+by \cmd{acme -{}-fonts}, \textit{Size} is the height in pixels, and a
+trailing \texttt{a} turns on antialiasing.  The font is chosen by, in
+decreasing precedence: the \cmd{-f} and \cmd{-F} options, the
+\env{font} environment variable (which sets both fonts), and the
+built-in default \file{DejaVuSansMono/13a/font}.
+
+If the built-in default font is not installed, acme falls back to the
+closest installed monospace font (as chosen by fontconfig) and prints
+a warning.  A missing font requested explicitly with \cmd{-f},
+\cmd{-F}, or \env{font} is a fatal error with suggested fixes.
 
 \section{Environment Variables}
 \label{sec:envvars}
@@ -226,6 +238,8 @@ Variable & Description \\
 \midrule
 \endhead
 \env{HOME} & User home directory.  Used to find \file{\textasciitilde/lib/plumbing}. \\
+\env{font} & Startup font (both proportional and fixed-width), e.g.\
+  \file{DejaVuSansMono/13a/font}.  Overridden by \cmd{-f} and \cmd{-F}. \\
 \env{acmeshell} & Shell used to run commands.  Defaults to \cmd{sh}. \\
 \env{tabstop} & Default tab width in columns.  Default is 4. \\
 \env{SHELL} & Shell used by the Win command. \\
