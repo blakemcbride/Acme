@@ -149,7 +149,7 @@ absolute(char *dir, char *file)
 {
 	char *p;
 
-	if(file[0] == '/')
+	if(isabspath(file))
 		return plumb_estrdup(file);
 	p = plumb_emalloc(strlen(dir)+1+strlen(file)+1);
 	sprint(p, "%s/%s", dir, file);

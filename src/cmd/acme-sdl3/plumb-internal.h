@@ -87,6 +87,7 @@ void		plumb_error(char*, ...);
 void*	plumb_emalloc(long);
 void*	plumb_erealloc(void*, long);
 char*	plumb_estrdup(char*);
+int		isabspath(char*);	/* acme/util.c */
 Ruleset**	plumb_readrules(char*, int);
 Exec*	plumb_matchruleset(Plumbmsg*, Ruleset*);
 void		plumb_freeexec(Exec*);

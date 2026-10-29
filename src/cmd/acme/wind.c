@@ -635,7 +635,7 @@ winaddincl(Window *w, Rune *r, int n)
 	a = runetobyte(r, n);
 	d = dirstat(a);
 	if(d == nil){
-		if(a[0] == '/')
+		if(isabspath(a))
 			goto Rescue;
 		rs = dirname(&w->body, r, n);
 		r = rs.r;

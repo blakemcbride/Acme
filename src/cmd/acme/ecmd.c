@@ -260,7 +260,7 @@ D_cmd(Text *t, Cmd *cp)
 		*s = '\0';
 		/* first time through, could be empty string, meaning delete file empty name */
 		nn = runestrlen(r);
-		if(r[0]=='/' || nn==0 || dir.nr==0){
+		if(runeisabspath(r, nn) || nn==0 || dir.nr==0){
 			rs.r = runestrdup(r);
 			rs.nr = nn;
 		}else{
@@ -1365,7 +1365,7 @@ cmdname(File *f, String *str, int set)
 	if(n == 0)
 		goto Return;
 
-	if(s[0] == '/'){
+	if(runeisabspath(s, n)){
 		r = runemalloc(n+1);
 		runemove(r, s, n);
 	}else{

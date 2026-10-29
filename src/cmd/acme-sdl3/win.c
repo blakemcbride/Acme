@@ -490,6 +490,42 @@ Err:
 	free(dir);
 }
 
+/*
+ * acme.exe is linked -mwindows (GUI subsystem), so it has no console
+ * and fds 1 and 2 go nowhere when run from cmd.exe.  Before printing
+ * output and exiting (--help, --fonts, usage), attach to the parent's
+ * console and point any unredirected fd at it.  Only for those paths:
+ * staying attached would let the console's Ctrl-C kill acme.
+ */
+void
+winattachconsole(void)
+{
+	int fd, nfd;
+	HANDLE h;
+
+	if((intptr_t)_get_osfhandle(1) >= 0 && (intptr_t)_get_osfhandle(2) >= 0)
+		return;	/* already redirected */
+	if(!AttachConsole(ATTACH_PARENT_PROCESS))
+		return;
+	for(fd=1; fd<=2; fd++){
+		if((intptr_t)_get_osfhandle(fd) >= 0)
+			continue;
+		h = CreateFileA("CONOUT$", GENERIC_READ|GENERIC_WRITE,
+			FILE_SHARE_READ|FILE_SHARE_WRITE, nil, OPEN_EXISTING, 0, nil);
+		if(h == INVALID_HANDLE_VALUE)
+			continue;
+		nfd = _open_osfhandle((intptr_t)h, _O_WRONLY|_O_BINARY);
+		if(nfd < 0){
+			CloseHandle(h);
+			continue;
+		}
+		if(nfd != fd){
+			_dup2(nfd, fd);
+			_close(nfd);
+		}
+	}
+}
+
 #else /* POSIX */
 
 /*

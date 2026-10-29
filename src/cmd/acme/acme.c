@@ -62,6 +62,10 @@ static int	shutdown(void*, char*);
 extern char	*fontsrv_resolvefont(char*, int);
 extern void	fontsrv_listfonts(void);
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+extern void	winattachconsole(void);	/* acme-sdl3/win.c */
+#endif
+
 static void
 help(void)
 {
@@ -120,6 +124,11 @@ threadmain(int argc, char *argv[])
 	rfork(RFENVG|RFNAMEG);
 
 	for(i=1; i<argc; i++){
+#if defined(_WIN32) && !defined(__CYGWIN__)
+		if(strcmp(argv[i], "-h")==0 || strcmp(argv[i], "--help")==0
+		|| strcmp(argv[i], "--fonts")==0)
+			winattachconsole();
+#endif
 		if(strcmp(argv[i], "-h")==0 || strcmp(argv[i], "--help")==0){
 			help();
 			threadexitsall(nil);
@@ -196,6 +205,9 @@ threadmain(int argc, char *argv[])
 		break;
 	default:
 	Usage:
+#if defined(_WIN32) && !defined(__CYGWIN__)
+		winattachconsole();
+#endif
 		fprint(2, "usage: acme [-abrD] [-c ncol] [-f font] [-F font] [-l loadfile] [-m mtpt] [-W winsize] [--fonts] [file ...]\n");
 		fprint(2, "run 'acme --help' for details\n");
 		threadexitsall("usage");

@@ -614,7 +614,7 @@ textcomplete(Text *t)
 	for(i=0; i<npath; i++)
 		path[i] = textreadc(t, q++);
 	/* is path rooted? if not, we need to make it relative to window path */
-	if(npath>0 && path[0]=='/')
+	if(npath>0 && runeisabspath(path, npath))
 		dir = runestr(path, npath);
 	else{
 		dir = dirname(t, nil, 0);

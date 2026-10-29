@@ -25,6 +25,39 @@ range(int q0, int q1)
 	return r;
 }
 
+/*
+ * Is the path absolute?  On Windows, X:/, X:\, / and \ also count.
+ */
+int
+runeisabspath(Rune *r, int n)
+{
+	if(n >= 1 && r[0] == '/')
+		return TRUE;
+#if defined(_WIN32) && !defined(__CYGWIN__)
+	if(n >= 1 && r[0] == '\\')
+		return TRUE;
+	if(n >= 3 && r[1] == ':' && (r[2] == '/' || r[2] == '\\')
+	&& ((r[0] >= 'A' && r[0] <= 'Z') || (r[0] >= 'a' && r[0] <= 'z')))
+		return TRUE;
+#endif
+	return FALSE;
+}
+
+int
+isabspath(char *s)
+{
+	if(s[0] == '/')
+		return TRUE;
+#if defined(_WIN32) && !defined(__CYGWIN__)
+	if(s[0] == '\\')
+		return TRUE;
+	if(s[0] && s[1] == ':' && (s[2] == '/' || s[2] == '\\')
+	&& ((s[0] >= 'A' && s[0] <= 'Z') || (s[0] >= 'a' && s[0] <= 'z')))
+		return TRUE;
+#endif
+	return FALSE;
+}
+
 Runestr
 runestr(Rune *r, uint n)
 {

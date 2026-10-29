@@ -37,6 +37,8 @@ void	run(Window*, char*, Rune*, int, int, char*, char*, int);
 void fsysclose(void);
 void	setcurtext(Text*, int);
 int	isfilec(Rune);
+int	isabspath(char*);
+int	runeisabspath(Rune*, int);
 void	rxinit(void);
 int rxnull(void);
 Runestr	dirname(Text*, Rune*, int);

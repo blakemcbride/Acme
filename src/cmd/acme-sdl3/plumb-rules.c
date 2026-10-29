@@ -248,7 +248,7 @@ filename(Exec *e, char *name)
 		buf = plumb_estrdup(name);
 		return cleanname(buf);
 	}
-	if(e->msg->data[0]=='/' || e->msg->wdir==nil || e->msg->wdir[0]=='\0'){
+	if(isabspath(e->msg->data) || e->msg->wdir==nil || e->msg->wdir[0]=='\0'){
 		buf = plumb_estrdup(e->msg->data);
 		return cleanname(buf);
 	}

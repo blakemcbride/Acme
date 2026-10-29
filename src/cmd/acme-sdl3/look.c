@@ -262,7 +262,7 @@ plumbshow(Plumbmsg *m)
 		snprint(namebuf, sizeof namebuf, "Untitled-%d", nuntitled);
 	}
 	p = nil;
-	if(name[0]!='/' && m->wdir!=nil && m->wdir[0]!='\0'){
+	if(!isabspath(name) && m->wdir!=nil && m->wdir[0]!='\0'){
 		nb = strlen(m->wdir) + 1 + strlen(name) + 1;
 		p = emalloc(nb);
 		snprint(p, nb, "%s/%s", m->wdir, name);
@@ -482,7 +482,7 @@ includename(Text *t, Rune *r, int n)
 	}
 
 	w = t->w;
-	if(n==0 || r[0]=='/' || w==nil)
+	if(n==0 || runeisabspath(r, n) || w==nil)
 		goto Rescue;
 	if(n>2 && r[0]=='.' && r[1]=='/')
 		goto Rescue;
@@ -523,7 +523,7 @@ dirname(Text *t, Rune *r, int n)
 	nt = t->w->tag.file->b.nc;
 	if(nt == 0)
 		goto Rescue;
-	if(n>=1 && r[0]=='/')
+	if(runeisabspath(r, n))
 		goto Rescue;
 	b = parsetag(t->w, n, &i);
 	slash = -1;
@@ -778,7 +778,7 @@ openfile(Text *t, Expand *e)
 			return nil;
 	}else{
 		w = lookfile(e->name, e->nname);
-		if(w == nil && e->name[0] != '/'){
+		if(w == nil && !runeisabspath(e->name, e->nname)){
 			n = utflen(wdir)+1+e->nname+1;
 			rp = runemalloc(n);
 			runesnprint(rp, n, "%s/%.*S", wdir, e->nname, e->name);
