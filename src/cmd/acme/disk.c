@@ -35,26 +35,32 @@ static	Block	*blist;
 int
 tempfile(void)
 {
-	char buf[128];
-	int i, fd;
+	char buf[512];
+	int i, fd, x;
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 	{
 		char *tmp = getenv("TEMP");
-		if(tmp == nil) tmp = "C:\\Temp";
-		snprint(buf, sizeof buf, "%s/X%d.%.4sacme", tmp, getpid(), getuser());
+		snprint(buf, sizeof buf, "%s/X%d.%.4sacme", tmp ? tmp : "C:/Windows/Temp", getpid(), getuser());
+		x = strlen(tmp ? tmp : "C:/Windows/Temp") + 1;	/* index of the X */
 		free(tmp);
 	}
 #else
 	snprint(buf, sizeof buf, "/tmp/X%d.%.4sacme", getpid(), getuser());
+	x = 5;
 #endif
 	for(i='A'; i<='Z'; i++){
-		buf[5] = i;
+		buf[x] = i;
 		if(access(buf, AEXIST) == 0)
 			continue;
 		fd = create(buf, ORDWR|ORCLOSE|OCEXEC, 0600);
-		if(fd >= 0)
+		if(fd >= 0){
+#if defined(_WIN32) && !defined(__CYGWIN__)
+			/* blocks hold raw Runes; text mode would mangle 0x0A and 0x1A */
+			_setmode(fd, _O_BINARY);
+#endif
 			return fd;
+		}
 	}
 	return -1;
 }

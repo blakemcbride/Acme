@@ -143,6 +143,14 @@ The shell honors the `COMSPEC` environment variable; by default
 this is `C:\Windows\System32\cmd.exe`.  PowerShell can be used by
 setting `COMSPEC` before launching acme.
 
+## External Commands
+
+Commands executed from a tag or body (`dir`, `<dir /b`, `|sort`,
+`>findstr foo`) run through `cmd.exe /s /c`, so cmd built-ins work.
+`COMSPEC` selects the shell.  To use a POSIX shell instead (e.g. MSYS2's
+`sh` for `<ls`), set `acmeshell` to its path; any shell other than
+cmd.exe is invoked with `-c`.
+
 ## Plumbing
 
 The built-in default plumbing rules dispatch URLs and recognized

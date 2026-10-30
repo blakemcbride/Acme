@@ -194,6 +194,11 @@ p9create(char *path, int mode, ulong perm)
 			werrstr("unsupported mode in create");
 			goto out;
 		}
+#ifdef _WIN32
+		/* ORCLOSE: remove() fails on an open file; delete on close instead */
+		if(rclose)
+			umode |= _O_TEMPORARY;
+#endif
 		fd = open(path, umode, perm);
 	}
 out:
@@ -217,8 +222,10 @@ out:
 		USED(rdwr);
 		USED(cexec);
 #endif
+#ifndef _WIN32
 		if(rclose)
 			remove(path);
+#endif
 	}
 	return fd;
 }

@@ -1547,6 +1547,20 @@ tab(Text *et, Text *_0, Text *argt, int _1, int _2, Rune *arg, int narg)
 		warning(nil, "%.*S: Tab %d\n", w->body.file->nname, w->body.file->name, w->body.tabstop);
 }
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+/* is the shell cmd.exe, which wants /c rather than -c? */
+static int
+iscmdshell(char *shell)
+{
+	char *p;
+
+	for(p=shell; *p; p++)
+		if(*p=='/' || *p=='\\')
+			shell = p+1;
+	return cistrcmp(shell, "cmd")==0 || cistrcmp(shell, "cmd.exe")==0;
+}
+#endif
+
 void
 runproc(void *argvp)
 {
@@ -1570,9 +1584,13 @@ runproc(void *argvp)
 	char buf[512];
 	int ret;
 	/*static void *parg[2]; */
-	char *rcarg[4];
+	char *rcarg[5];
 	void **argv;
 	char *shell;
+#if defined(_WIN32) && !defined(__CYGWIN__)
+	static char *comspec;
+	int iscmd;
+#endif
 
 	threadsetname("runproc");
 
@@ -1687,6 +1705,9 @@ runproc(void *argvp)
 		putenv("acmeaddr", argaddr);
 	if(acmeshell != nil)
 		goto Hard;
+#if defined(_WIN32) && !defined(__CYGWIN__)
+	goto Hard;	/* cmd.exe built-ins (dir, type, ...) need the shell */
+#endif
 	if(strlen(t) > sizeof buf-10)	/* may need to print into stack */
 		goto Hard;
 	inarg = FALSE;
@@ -1767,9 +1788,23 @@ Hard:
 		close(fd);
 	}
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+	shell = acmeshell;
+	if(shell == nil){
+		if(comspec == nil)
+			comspec = getenv("COMSPEC");
+		shell = comspec ? comspec : "cmd.exe";
+	}
+	iscmd = iscmdshell(shell);
+#endif
 	if(arg){
 		news = emalloc(strlen(t) + 1 + 1 + strlen(arg) + 1 + 1);
 		if(news){
+#if defined(_WIN32) && !defined(__CYGWIN__)
+			if(iscmd)
+				sprint(news, "%s \"%s\"", t, arg);
+			else
+#endif
 			sprint(news, "%s '%s'", t, arg);	/* BUG: what if quote in arg? */
 			free(s);
 			t = news;
@@ -1779,6 +1814,20 @@ Hard:
 	dir = nil;
 	if(rdir != nil)
 		dir = runetobyte(rdir, ndir);
+#if defined(_WIN32) && !defined(__CYGWIN__)
+	rcarg[0] = shell;
+	if(iscmd){
+		/* /s: strip only the outer quotes buildcmdline adds */
+		rcarg[1] = "/s";
+		rcarg[2] = "/c";
+		rcarg[3] = t;
+		rcarg[4] = nil;
+	}else{
+		rcarg[1] = "-c";
+		rcarg[2] = t;
+		rcarg[3] = nil;
+	}
+#else
 	shell = acmeshell;
 	if(shell == nil)
 		shell = "sh";
@@ -1786,6 +1835,7 @@ Hard:
 	rcarg[1] = "-c";
 	rcarg[2] = t;
 	rcarg[3] = nil;
+#endif
 	ret = threadspawnd(sfd, rcarg[0], rcarg, dir);
 #if defined(_WIN32) && !defined(__CYGWIN__)
 	putenv("acmeaddr", "");
