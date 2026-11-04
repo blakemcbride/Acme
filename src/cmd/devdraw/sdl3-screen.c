@@ -424,6 +424,16 @@ static int mousex, mousey;
 static uint mousems;
 
 /*
+ * Per SDL button: the Plan 9 bit it was mapped to when pressed (0 if
+ * not held; Ctrl/Alt-click change the mapping, so the release must
+ * clear what the press set) and the time of its last release.
+ */
+enum { Nsdlbut = 8, Debouncens = 40*1000*1000 };
+static int sdlbutmap[Nsdlbut];
+static Uint64 sdlbutup[Nsdlbut];
+static int debugmouse;
+
+/*
  * Main SDL event loop. Runs on the graphics thread.
  */
 static void
@@ -433,6 +443,7 @@ sdlloop(void)
 	Sdlwin *w;
 	int c, shift;
 
+	debugmouse = getenv("ACME_DEBUG_MOUSE") != nil;
 	sdllock();
 	for(;;) {
 		sdlunlock();
@@ -506,7 +517,28 @@ sdlloop(void)
 		}
 
 		case SDL_EVENT_MOUSE_BUTTON_DOWN: {
-			int b = sdltoplan9buttons(ev.button.button);
+			int sb = ev.button.button;
+			int b = sdltoplan9buttons(sb);
+			if(debugmouse)
+				fprint(2, "acme: mouse down which=%ud button=%d x=%d y=%d t=%llud\n",
+					(uint)ev.button.which, sb, (int)ev.button.x, (int)ev.button.y,
+					(uvlong)ev.button.timestamp);
+			if(b == 0 || sb >= Nsdlbut)
+				break;
+			/*
+			 * Drop duplicate presses. Some input stacks (reported
+			 * with a ThinkPad X230 middle button) deliver one click
+			 * twice, and acme then runs a button-2 command twice.
+			 * A press of a button already held, or within Debouncens
+			 * of its release, cannot be a new physical click. Its
+			 * release then finds sdlbutmap[sb]==0 and is dropped too.
+			 */
+			if(sdlbutmap[sb] != 0
+			|| (sdlbutup[sb] != 0 && ev.button.timestamp < sdlbutup[sb] + Debouncens)) {
+				if(debugmouse)
+					fprint(2, "acme: mouse down dropped as duplicate\n");
+				break;
+			}
 			/* Ctrl-click = button 2, Alt-click = button 3 */
 			if(b == 1) {
 				SDL_Keymod mod = SDL_GetModState();
@@ -516,6 +548,7 @@ sdlloop(void)
 					b = 4;
 			}
 			altdown = 0;
+			sdlbutmap[sb] = b;
 			buttons |= b;
 			mousex = (int)ev.button.x;
 			mousey = (int)ev.button.y;
@@ -528,7 +561,17 @@ sdlloop(void)
 		}
 
 		case SDL_EVENT_MOUSE_BUTTON_UP: {
-			int b = sdltoplan9buttons(ev.button.button);
+			int sb = ev.button.button;
+			int b;
+			if(debugmouse)
+				fprint(2, "acme: mouse up   which=%ud button=%d x=%d y=%d t=%llud\n",
+					(uint)ev.button.which, sb, (int)ev.button.x, (int)ev.button.y,
+					(uvlong)ev.button.timestamp);
+			if(sb >= Nsdlbut || sdlbutmap[sb] == 0)
+				break;	/* release of a dropped duplicate press */
+			b = sdlbutmap[sb];
+			sdlbutmap[sb] = 0;
+			sdlbutup[sb] = ev.button.timestamp;
 			altdown = 0;
 			buttons &= ~b;
 			mousex = (int)ev.button.x;
