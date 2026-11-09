@@ -96,6 +96,12 @@ The changes, in rough order:
     refusing to start.  `acme --fonts` lists all installed font names
     and `acme --help` explains everything.
 
+## Downloads
+
+Pre-built binaries for Windows, Linux, and macOS are available from the
+[latest release](https://github.com/blakemcbride/Acme/releases/latest),
+which also lists what each one needs in order to run.
+
 ## Building
 
 The codebase supports four build targets, all from the same source
@@ -140,8 +146,8 @@ make
 The resulting `bin/acme.exe` can be copied to any Windows 10/11 machine
 and run with no other files required.
 
-A pre-compiled Windows binary is available at
-[https://blakemcbride.com/files/acme.exe](https://blakemcbride.com/files/acme.exe).
+A pre-compiled `acme.exe` is available from the
+[latest release](https://github.com/blakemcbride/Acme/releases/latest).
 Download it and run directly — no installation or dependencies needed.
 
 ### Clean
