@@ -56,6 +56,9 @@ Replaced X11 backend in devdraw with SDL3 for native Wayland support.
 - Software rendering via memdraw, texture upload at flush (like macOS backend)
 - Cross-thread dispatch: rpc_flush posts custom SDL event, graphics thread renders
 - rpc_resizeimg uses Rendez condition variable for synchronous dispatch
+- All other SDL calls from the RPC side (label, raise, resize, warp, cursor,
+  clipboard) go through gfxcall, which runs them on the graphics thread and
+  waits; AppKit traps (SIGTRAP, "sys: breakpoint") on some of them elsewhere
 - XRGB32 maps directly to SDL_PIXELFORMAT_XRGB8888
 - No PRIMARY selection (SDL3 only exposes CLIPBOARD)
 - rpc_bouncemouse is a no-op (rio/9wm specific)

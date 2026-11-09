@@ -78,6 +78,7 @@ static int altdown;
 static Uint32 flushevent;	/* custom SDL event type for cross-thread flush */
 static Uint32 resizeevent;	/* custom SDL event for cross-thread resize */
 static Uint32 attachevent;	/* custom SDL event for cross-thread attach */
+static Uint32 callevent;	/* custom SDL event for gfxcall */
 static QLock flushlk;
 static Rectangle flushr;	/* pending flush rectangle */
 static Client *flushclient;	/* client for pending flush */
@@ -92,6 +93,19 @@ static Memimage *attachresult;
 static QLock attachlk;
 static Rendez attachwait;	/* signaled when attach completes */
 static int attachdone;
+
+/*
+ * A function to run on the graphics thread; see gfxcall.
+ */
+typedef struct Gfxcall Gfxcall;
+struct Gfxcall
+{
+	void (*fn)(void*);
+	void *arg;
+	int done;
+	Rendez r;
+};
+static QLock calllk;
 
 static void	sdlloop(void);
 static void	_sdlflush(Sdlwin*, Rectangle);
@@ -489,7 +503,8 @@ sdlloop(void)
 		if(w == nil)
 			w = windows;
 		if(w == nil && ev.type != flushevent
-		&& ev.type != resizeevent && ev.type != attachevent)
+		&& ev.type != resizeevent && ev.type != attachevent
+		&& ev.type != callevent)
 			continue;
 
 		switch(ev.type) {
@@ -779,6 +794,15 @@ sdlloop(void)
 				attachdone = 1;
 				rwakeup(&attachwait);
 				qunlock(&attachlk);
+			} else if(ev.type == callevent) {
+				Gfxcall *gc;
+
+				gc = ev.user.data1;
+				gc->fn(gc->arg);
+				qlock(&calllk);
+				gc->done = 1;
+				rwakeup(&gc->r);
+				qunlock(&calllk);
 			}
 			break;
 		}
@@ -854,11 +878,12 @@ gfx_main(void)
 
 	install_x_error_handler();
 
-	flushevent = SDL_RegisterEvents(3);
+	flushevent = SDL_RegisterEvents(4);
 	if(flushevent == 0)
 		sysfatal("SDL_RegisterEvents failed");
 	resizeevent = flushevent + 1;
 	attachevent = flushevent + 2;
+	callevent = flushevent + 3;
 	resizewait.l = &resizelk;
 	attachwait.l = &attachlk;
 
@@ -976,61 +1001,131 @@ rpc_resizeimg(Client *client)
 	qunlock(&resizelk);
 }
 
+/*
+ * Run fn(arg) on the graphics thread and wait for it to finish.
+ * The RPCs below touch windows, the cursor, or the clipboard, which
+ * must happen there: on macOS, AppKit traps (SIGTRAP) on some of
+ * these calls from any other thread.  fn runs with sdllk held, so it
+ * must not call sdllock.  The caller must not be the graphics thread
+ * and must not hold a lock the graphics thread takes (eventlk, drawlk).
+ */
+static void
+gfxcall(void (*fn)(void*), void *arg)
+{
+	Gfxcall gc;
+	SDL_Event ev;
+
+	memset(&gc, 0, sizeof gc);
+	gc.fn = fn;
+	gc.arg = arg;
+	gc.r.l = &calllk;
+
+	memset(&ev, 0, sizeof ev);
+	ev.type = callevent;
+	ev.user.data1 = &gc;
+
+	/* hold calllk across the push so the wakeup can't precede the sleep */
+	qlock(&calllk);
+	if(!SDL_PushEvent(&ev))
+		fprint(2, "sdl3: SDL_PushEvent failed: %s\n", SDL_GetError());
+	else
+		while(!gc.done)
+			rsleep(&gc.r);
+	qunlock(&calllk);
+}
+
+typedef struct Wincall Wincall;
+struct Wincall
+{
+	Sdlwin *w;
+	char *label;
+	Rectangle r;
+	Point p;
+};
+
+static void
+setlabelcall(void *v)
+{
+	Wincall *a = v;
+
+	SDL_SetWindowTitle(a->w->win, a->label ? a->label : "devdraw");
+}
+
 void
 rpc_setlabel(Client *client, char *label)
 {
-	Sdlwin *w = (Sdlwin*)client->view;
+	Wincall a;
 
-	sdllock();
-	SDL_SetWindowTitle(w->win, label ? label : "devdraw");
-	sdlunlock();
+	a.w = (Sdlwin*)client->view;
+	a.label = label;
+	gfxcall(setlabelcall, &a);
+}
+
+static void
+topwincall(void *v)
+{
+	Wincall *a = v;
+
+	SDL_RaiseWindow(a->w->win);
 }
 
 void
 rpc_topwin(Client *client)
 {
-	Sdlwin *w = (Sdlwin*)client->view;
+	Wincall a;
 
-	sdllock();
-	SDL_RaiseWindow(w->win);
-	sdlunlock();
+	a.w = (Sdlwin*)client->view;
+	gfxcall(topwincall, &a);
+}
+
+static void
+resizewindowcall(void *v)
+{
+	Wincall *a = v;
+
+	SDL_SetWindowSize(a->w->win, Dx(a->r), Dy(a->r));
 }
 
 void
 rpc_resizewindow(Client *client, Rectangle r)
 {
-	Sdlwin *w = (Sdlwin*)client->view;
+	Wincall a;
 
-	sdllock();
-	SDL_SetWindowSize(w->win, Dx(r), Dy(r));
-	sdlunlock();
+	a.w = (Sdlwin*)client->view;
+	a.r = r;
+	gfxcall(resizewindowcall, &a);
+}
+
+static void
+setmousecall(void *v)
+{
+	Wincall *a = v;
+
+	SDL_WarpMouseInWindow(a->w->win, (float)a->p.x, (float)a->p.y);
 }
 
 void
 rpc_setmouse(Client *client, Point p)
 {
-	Sdlwin *w = (Sdlwin*)client->view;
+	Wincall a;
 
-	sdllock();
-	SDL_WarpMouseInWindow(w->win, (float)p.x, (float)p.y);
-	sdlunlock();
+	a.w = (Sdlwin*)client->view;
+	a.p = p;
+	gfxcall(setmousecall, &a);
 }
 
-void
-rpc_setcursor(Client *client, Cursor *c, Cursor2 *c2)
+static void
+setcursorcall(void *v)
 {
+	Cursor *c = v;
 	SDL_Cursor *sc;
 	SDL_Surface *surface;
 	uchar src[2*16], mask[2*16];
 	int i, x, y;
 	u32int *pixels;
 
-	USED(c2);
-
-	sdllock();
 	if(c == nil) {
 		SDL_SetCursor(SDL_GetDefaultCursor());
-		sdlunlock();
 		return;
 	}
 
@@ -1047,10 +1142,8 @@ rpc_setcursor(Client *client, Cursor *c, Cursor2 *c2)
 	}
 
 	surface = SDL_CreateSurface(16, 16, SDL_PIXELFORMAT_ARGB8888);
-	if(surface == nil) {
-		sdlunlock();
+	if(surface == nil)
 		return;
-	}
 	pixels = (u32int*)surface->pixels;
 
 	for(y = 0; y < 16; y++) {
@@ -1070,7 +1163,14 @@ rpc_setcursor(Client *client, Cursor *c, Cursor2 *c2)
 	SDL_DestroySurface(surface);
 	if(sc != nil)
 		SDL_SetCursor(sc);
-	sdlunlock();
+}
+
+void
+rpc_setcursor(Client *client, Cursor *c, Cursor2 *c2)
+{
+	USED(client);
+	USED(c2);
+	gfxcall(setcursorcall, c);
 }
 
 void
@@ -1086,36 +1186,49 @@ rpc_bouncemouse(Client *client, Mouse m)
  * SDL3 provides simple text clipboard which covers the CLIPBOARD selection.
  * PRIMARY selection (middle-click paste) is not supported by SDL3.
  */
-static QLock cliplk;
-static char *clipbuf;
+static char *clipbuf;	/* graphics thread only */
+
+static void
+getsnarfcall(void *v)
+{
+	char **ret = v;
+	char *s;
+
+	*ret = nil;
+	s = SDL_GetClipboardText();
+	if(s != nil) {
+		if(s[0])
+			*ret = strdup(s);
+		SDL_free(s);
+	}
+	if(*ret == nil && clipbuf != nil)
+		*ret = strdup(clipbuf);
+}
 
 char*
 rpc_getsnarf(void)
 {
-	char *s, *ret;
+	char *ret;
 
-	qlock(&cliplk);
 	ret = nil;
-	s = SDL_GetClipboardText();
-	if(s != nil) {
-		if(s[0])
-			ret = strdup(s);
-		SDL_free(s);
-	}
-	if(ret == nil && clipbuf != nil)
-		ret = strdup(clipbuf);
-	qunlock(&cliplk);
+	gfxcall(getsnarfcall, &ret);
 	return ret;
+}
+
+static void
+putsnarfcall(void *v)
+{
+	char *data = v;
+
+	free(clipbuf);
+	clipbuf = strdup(data);
+	SDL_SetClipboardText(data);
 }
 
 void
 rpc_putsnarf(char *data)
 {
-	qlock(&cliplk);
-	free(clipbuf);
-	clipbuf = strdup(data);
-	SDL_SetClipboardText(data);
-	qunlock(&cliplk);
+	gfxcall(putsnarfcall, data);
 }
 
 void
