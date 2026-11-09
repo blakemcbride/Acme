@@ -303,6 +303,13 @@ plumb_send(Plumbmsg *m)
 	if(plumb_rules == nil)
 		return -1;
 
+	/*
+	 * plumbunpack gives the real plumber "" for an unset dst.
+	 * We bypass it, and rules like "dst is x" assume non-nil.
+	 */
+	if(m->dst == nil)
+		m->dst = plumb_estrdup("");
+
 	for(i=0; plumb_rules[i]; i++){
 		e = plumb_matchruleset(m, plumb_rules[i]);
 		if(e != nil){
