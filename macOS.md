@@ -32,8 +32,10 @@ Fonts are discovered via fontconfig/freetype, same as on Linux.
 The default plumbing rules use macOS `open` command (instead of
 Linux `xdg-open`) for URLs, images, and PDFs.
 
-Custom plumbing rules can be placed in `~/lib/plumbing` to override
-the built-in defaults.
+Custom plumbing rules can be placed in `~/.config/acme/plumbing` to
+override the built-in defaults.  The file replaces the defaults
+entirely; the two are not merged.  Create the directory first if
+necessary (`mkdir -p ~/.config/acme`).
 
 ## Mouse
 

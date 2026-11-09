@@ -70,8 +70,10 @@ Replaced X11 backend in devdraw with SDL3 for native Wayland support.
 
 Plumbing rules are embedded in `src/cmd/acme-sdl3/plumb-glue.c` as
 `defaultrules[]`. No external plumb files or Plan 9 plumber needed.
-Users can still override via `~/lib/plumbing`. Default rules use
-`xdg-open` for URLs, images, and PDFs.
+Users can override via `~/.config/acme/plumbing`, which replaces the
+defaults entirely. The rule loader never consults `$PLAN9`: `include`
+takes a plain path and there is no `$plan9` variable. Default rules
+use `xdg-open` for URLs, images, and PDFs.
 
 ## Font Selection
 

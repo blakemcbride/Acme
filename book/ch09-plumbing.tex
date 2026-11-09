@@ -74,11 +74,25 @@ The command used to open URLs, images, and PDFs varies by platform:
 \label{sec:customrules}
 
 \index{plumbing!custom rules}
-\index{plumbing rules file@\file{\textasciitilde/lib/plumbing}}
+\index{plumbing rules file@\file{\textasciitilde/.config/acme/plumbing}}
 
 To override or extend the default rules, create the file
-\file{\textasciitilde/lib/plumbing}.  If this file exists, it
-\emph{replaces} the built-in defaults entirely.
+\file{\textasciitilde/.config/acme/plumbing}, creating the directory
+first if necessary:
+
+\begin{lstlisting}[frame=none,basicstyle=\small\ttfamily]
+mkdir -p ~/.config/acme
+\end{lstlisting}
+
+If this file exists, it \emph{replaces} the built-in defaults entirely.
+
+A rules file can read another file with an \texttt{include} line.  Give
+the full path, because a relative name is looked up in the directory
+acme was started from:
+
+\begin{lstlisting}[frame=none,basicstyle=\small\ttfamily]
+include /home/me/.config/acme/go-rules
+\end{lstlisting}
 
 \subsection{Rule Syntax}
 
@@ -178,7 +192,10 @@ plumb start xterm -e man $2 $1
 If right-clicking does not produce the expected result:
 
 \begin{enumerate}
-\item Check \file{\textasciitilde/lib/plumbing} for syntax errors.
+\item Check \file{\textasciitilde/.config/acme/plumbing} for syntax errors.
+      If the file has a syntax error or an \texttt{include} that cannot be
+      opened, acme reports the error at startup and runs with no plumbing
+      rules at all.
 \item Remember that custom rules \emph{replace} the defaults---include
       the standard rules in your file if you want to keep them.
 \item Rules are matched in order; the first match wins.

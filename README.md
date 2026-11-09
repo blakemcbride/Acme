@@ -47,7 +47,8 @@ The changes, in rough order:
 4. **Embedded plumber** — Plumbing rules (the Plan 9 mechanism for
    dispatching actions on text) are compiled into the binary with
    sensible defaults for Linux (using `xdg-open` for URLs, images, and
-   PDFs).  Users can still override rules via `~/lib/plumbing`.
+   PDFs).  Users can still override rules via
+   `~/.config/acme/plumbing`.
 
 5. **GNU make build system** — Replaced the Plan 9 `mk` build system
    entirely.  All 18 static libraries and the acme binary are built

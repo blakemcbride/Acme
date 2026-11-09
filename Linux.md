@@ -58,8 +58,10 @@ explains the details.
 
 The default plumbing rules use `xdg-open` for URLs, images, and PDFs.
 
-Custom plumbing rules can be placed in `~/lib/plumbing` to override
-the built-in defaults.
+Custom plumbing rules can be placed in `~/.config/acme/plumbing` to
+override the built-in defaults.  The file replaces the defaults
+entirely; the two are not merged.  Create the directory first if
+necessary (`mkdir -p ~/.config/acme`).
 
 ## Mouse
 

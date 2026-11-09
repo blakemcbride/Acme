@@ -156,8 +156,12 @@ cmd.exe is invoked with `-c`.
 The built-in default plumbing rules dispatch URLs and recognized
 file types through `explorer.exe`, which is a thin wrapper around
 `ShellExecute` — so HTTP(S) links open in the user's default
-browser and files open with their registered associations.  Drop
-a custom `~/lib/plumbing` to override the defaults.
+browser and files open with their registered associations.
+
+To override the defaults, put custom rules in `.config\acme\plumbing`
+under your home directory (`%HOME%` if set, otherwise
+`%USERPROFILE%`).  The file replaces the defaults entirely; the two
+are not merged.
 
 ## Technical Notes
 

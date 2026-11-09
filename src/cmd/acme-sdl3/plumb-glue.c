@@ -112,7 +112,7 @@ plumb_estrdup(char *s)
 }
 
 /*
- * Built-in plumbing rules, used when ~/lib/plumbing doesn't exist.
+ * Built-in plumbing rules, used when ~/.config/acme/plumbing doesn't exist.
  * This is fileaddr + basic inlined, with Plan 9 tools replaced by
  * standard platform equivalents (xdg-open on Linux, open on macOS).
  */
@@ -219,7 +219,7 @@ writeproc(void *v)
 
 /*
  * Initialize the embedded plumber.
- * Load rules from ~/lib/plumbing, or use built-in defaults.
+ * Load rules from ~/.config/acme/plumbing, or use built-in defaults.
  * Returns 0 on success, -1 on failure.
  */
 int
@@ -250,7 +250,7 @@ plumb_init(void)
 
 	plumbfile = nil;
 	fd = -1;
-	sprint(buf, "%s/lib/plumbing", plumb_home);
+	snprint(buf, sizeof buf, "%s/.config/acme/plumbing", plumb_home);
 	if(access(buf, 0) >= 0){
 		plumbfile = plumb_estrdup(buf);
 		fd = open(plumbfile, OREAD);

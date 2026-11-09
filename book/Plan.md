@@ -290,7 +290,7 @@ URLs open in browser. Images and PDFs open in viewer. File
 addresses open in acme. Include files searched in system paths.
 
 #### 9.3 Custom Rules
-Writing `~/lib/plumbing`. Rule syntax: type, data, arg, plumb
+Writing `~/.config/acme/plumbing`. Rule syntax: type, data, arg, plumb
 directives. Pattern matching. The `plumb start` and `plumb client`
 actions.
 
@@ -334,7 +334,7 @@ The `-f` and `-F` flags. The Font command. Fontconfig font names.
 Available font sizes.
 
 #### 11.2 Plumbing Rules
-Custom `~/lib/plumbing` file. Adding language-specific rules
+Custom `~/.config/acme/plumbing` file. Adding language-specific rules
 (e.g., Go import paths, Python modules, Rust crate docs).
 
 #### 11.3 Helper Scripts

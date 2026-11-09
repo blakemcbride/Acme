@@ -428,7 +428,7 @@ assignment(char *p)
 int
 include(char *s)
 {
-	char *t, *args[3], buf[128];
+	char *args[3];
 	int n, fd;
 
 	if(strncmp(s, "include", 7) != 0)
@@ -442,16 +442,10 @@ include(char *s)
 		goto Err;
 	if(n>2 && args[2][0] != '#')
 		goto Err;
-	t = args[1];
-	fd = open(t, OREAD);
-	if(fd<0 && t[0]!='/' && strncmp(t, "./", 2)!=0 && strncmp(t, "../", 3)!=0){
-		snprint(buf, sizeof buf, "#9/plumb/%s", t);
-		t = unsharp(buf);
-		fd = open(t, OREAD);
-	}
+	fd = open(args[1], OREAD);
 	if(fd < 0)
-		plumb_parseerror("can't open %s for inclusion", t);
-	pushinput(t, fd, nil);
+		plumb_parseerror("can't open %s for inclusion", args[1]);
+	pushinput(args[1], fd, nil);
 	return 1;
 
     Err:
@@ -557,11 +551,6 @@ readruleset(void)
 	Ruleset *rs;
 	Rule *r;
 	int eof, inrule, i, ncmd;
-	char *plan9root;
-
-	plan9root = get9root();
-	if(plan9root)
-		setvariable("plan9", 5, plan9root, plan9root);
 
    Again:
 	eof = 0;

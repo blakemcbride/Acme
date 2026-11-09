@@ -313,7 +313,7 @@ look3() builds Plumbmsg
 ### Initialization
 
 `startplumbing()` calls `plumb_init()` which:
-1. Reads `~/lib/plumbing` (or `$PLAN9/plumb/initial.plumbing`)
+1. Reads `~/.config/acme/plumbing`, or the built-in `defaultrules[]` if that file doesn't exist
 2. Parses rules via `plumb_readrules()`
 3. Sets `plumbing_ready` flag
 
